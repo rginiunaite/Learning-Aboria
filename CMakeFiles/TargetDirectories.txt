@@ -1,0 +1,3 @@
+/home/giniunaite/Learning/CMakeFiles/rebuild_cache.dir
+/home/giniunaite/Learning/CMakeFiles/edit_cache.dir
+/home/giniunaite/Learning/CMakeFiles/fixed_gradient.dir
