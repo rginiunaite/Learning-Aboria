@@ -3,6 +3,9 @@
 #include <map>
 #include <Eigen/Core>
 #include <algorithm> // std::unique_copy
+// writing on a text file
+#include <iostream>
+#include <fstream>
 
 #include <math.h>
 
@@ -20,7 +23,7 @@ int main() {
 	std::default_random_engine generator;
         std::normal_distribution<double> dist(0.0,1.0); // for x and y variables same mean and variance
 
-	const int length = 100000; // length of the chemoattractant vector
+	const int length = 10000000; // length of the chemoattractant vector
 
 	VectorXf chemo_x(length), chemo_y(length);	
 
@@ -95,12 +98,32 @@ int main() {
 	std::cout << "Matrix created using eigen " << std::endl; 
 
 
-	for (int i =0;i<lattice_size;i++){
+	/*for (int i =0;i<lattice_size;i++){
 		for(int j = 0;j<lattice_size;j++){
         	std::cout << histogram(i,j) << " "; 
 		}
 		std::cout << "\n" << std::endl; 
+    	}*/	
+		
+		cout << "Size of the interior matrix " << interior_lattice_size << endl;
+
+	for (int i =0;i<interior_lattice_size;i++){
+		for(int j = 0;j<interior_lattice_size;j++){
+        	std::cout << histogram_int(i,j) << " "; 
+		}
+		std::cout << "\n" << std::endl; 
     	}	
+
+
+	ofstream output("interior_matrix.txt");
+	  
+	for (int i =0;i<interior_lattice_size;i++){
+		for(int j = 0;j<interior_lattice_size;j++){
+        	output << histogram_int(i,j) << " "; 
+		}
+		output << "\n" << std::endl; 
+    	}	
+
 	
 
 	    /*
@@ -109,7 +132,7 @@ int main() {
 
 	// step size;
 
-	double step = 100;
+	double step = 5;
 
 	const size_t N = 100;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
@@ -131,7 +154,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 100; // number of times the cells move up the gradient
+	int N_steps = 1000; // number of times the cells move up the gradient
 
 for (int j=0; j<N_steps;j++){
 	for (int i=0; i < particles.size(); i++){
@@ -140,9 +163,10 @@ for (int j=0; j<N_steps;j++){
 			vdouble2 x;
 			x = get<position>(particles[i]);
 		
-			cout << "x coord " << x[0] << endl;
+			//cout << "x coord " << x[0] << endl;
 
-			cout << "y coord " << x[1] << endl;	// choose internal positions
+			//cout << "y coord " << x[1] << endl;	
+		// choose internal positions
 		if (round(x)[0]>1 && round(x)[0] < interior_lattice_size && round(x)[1]>1 && round(x)[1] < interior_lattice_size ){
 		
 		// check which of the four directions we obtain the biggest gradient
@@ -151,15 +175,15 @@ for (int j=0; j<N_steps;j++){
 
 					double up = histogram_int(round(x)[0],round(x)[1]+1)- histogram_int(round(x)[0],round(x)[1]);		
 
-			cout << "up " << up << endl;
+			//cout << "up " << up << endl;
 					double down = histogram_int(round(x)[0],round(x)[1]-1)- histogram_int(round(x)[0],round(x)[1]);
-			cout << "down " << down << endl;
+			//cout << "down " << down << endl;
 					double right = histogram_int(round(x)[0]+1,round(x)[1])- histogram_int(round(x)[0],round(x)[1]);
-			cout << "right " << right << endl;
+			//cout << "right " << right << endl;
 
 					double left = histogram_int(round(x)[0]-1,round(x)[1])- histogram_int(round(x)[0],round(x)[1]);
 
-			cout << "left " << left << endl;
+			//cout << "left " << left << endl;
 
 					directions(0) = up;
 					directions(1) = down;
@@ -170,7 +194,7 @@ for (int j=0; j<N_steps;j++){
 					// find maximum direction, if maximum is not unique, it chooses the one with the lowest coefficient, I will have to change that then it chooses randomly
 					Eigen::VectorXf::Index max_index;
 					double max_dir_index = directions.maxCoeff(&max_index);// do not forget from 0 to 3
-					std::cout << "max index " << max_index << std::endl;
+					//cout << "max index " << max_index << endl;
 					double change;
 
 			// do not move if maximum is negative
@@ -181,7 +205,7 @@ for (int j=0; j<N_steps;j++){
 			}
 			// if not, then move up the gradient
 			else{
-			cout << "old position " << get<position>(particles)[i] << endl;
+			//cout << "old position " << get<position>(particles)[i] << endl;
 					if (max_index == 0)// up
 					{
 						get<position>(particles)[i] += vdouble2(0,step);
@@ -198,7 +222,7 @@ for (int j=0; j<N_steps;j++){
 					{
 						get<position>(particles)[i] += vdouble2(-step,0);
 					}
-			cout << "new position " << get<position>(particles)[i] << endl;
+			//cout << "new position " << get<position>(particles)[i] << endl;
 			}
 		}
 	
