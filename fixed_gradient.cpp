@@ -2,6 +2,7 @@
 #include <random>
 #include <map>
 #include <Eigen/Core>
+#include <algorithm> // std::unique_copy
 
 #include <math.h>
 
@@ -94,7 +95,7 @@ int main() {
 
 	// step size;
 
-	double step = 1;
+	double step = 10;
 
 	const size_t N = 100;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
@@ -133,42 +134,43 @@ cout << "right " << right << endl;
 
 cout << "left " << left << endl;
 
-		directions(1) = up;
-		directions(2) = down;
-		directions(3) = right;
-		directions(4) = left;
-		cout << "left gradient" << left << endl;
+		directions(0) = up;
+		directions(1) = down;
+		directions(2) = right;
+		directions(3) = left;
+
+	// save particles before they move
+	vtkWriteGrid("before_fixed",0,particles.get_grid(true));
 		
-		// find maximum direction
+		// find maximum direction, if maximum is not unique, it chooses the one with the lowest coefficient, I will have to change that then it chooses randomly
 		Eigen::VectorXf::Index max_index;
-		double max_dir_index = directions.maxCoeff(&max_index);
-		std::cout << "max index" << max_dir_index << std::endl;
+		double max_dir_index = directions.maxCoeff(&max_index);// do not forget from 0 to 3
+		std::cout << "max index " << max_index << std::endl;
 		double change;
 
-		if (max_dir_index == 1)// up
+		if (max_index == 0)// up
 		{
 			x += vdouble2(0,step);
 		}
-		if (max_dir_index == 2)// down
+		if (max_index == 1)// down
 		{
 			x += vdouble2(0,-step);
 		}
-		if (max_dir_index == 3)// right
+		if (max_index == 2)// right
 		{
 			x += vdouble2(step,0);
 		}
-		if (max_dir_index == 4)// left
+		if (max_index == 3)// left
 		{
 			x += vdouble2(-step,0);
 		}
-
 	    }
 	}
 	particles.update_positions();
 	 
 
 
-	// saves the file
+	// save particles after they movev
 	vtkWriteGrid("fixed",0,particles.get_grid(true));
 
 }
