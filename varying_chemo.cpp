@@ -22,7 +22,7 @@ using namespace Eigen; // objects VectorXf, MatrixXf
 int main() {
 
 	
-	int lattice_size = 100;
+	int lattice_size = 1000;
 
 	// create matrices for the current value and the updated one
 	MatrixXf chemo(lattice_size,lattice_size), chemo_new(lattice_size,lattice_size); 	
@@ -52,20 +52,22 @@ int main() {
 	 */
 
 	// parameters
-	double D = 0.1; // diffusion coefficient
+	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt =1; // time step, redundant
-	double t_final = 5; // final time	
+	int t_final = 10; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
-	double kai = 0.0001; // 1/h production rate of chemoattractant
-	int step = 2;
+	double kai = 0.0001; // to 1 /h production rate of chemoattractant
+	int step = 10;
 
 
 	// initially assume that the domain length is fixed
 	
-	double domain_len = 120;
+	int domain_len = 100;
 	double domain_len_der = 0; // for now this is useless
+
+	int mesh_per_domain = lattice_size/domain_len; // the ratio between total mesh points and domain length
 
 	// parameters for internalisation
 
@@ -108,7 +110,7 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- (domain_len*domain_len*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- (domain_len*domain_len*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
 				}			
 			}
     		}		
@@ -118,14 +120,24 @@ int main() {
 		for (int i=1;i<lattice_size-1;i++){
 			for (int j=1;j<lattice_size-1;j++){
 				chemo_new(i,j) = dt * (D*((1/(domain_len*domain_len))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
+			cout << "print the internalisation term " << intern(i,j) << endl;
+			cout << "new chemo " << chemo_new(i,j) << endl;
+			cout << "chemo " << chemo(i,j) << endl;
 			}
 		}
+		
+
+		// change only the interior
+		/*for (int i=0;i<lattice_size;i++){
+			for (int j=0;j<lattice_size;j++){
+				chemo(i,j) = chemo_new(i,j);
+			}
+		}*/
 		chemo = chemo_new;
 		
 		/*
 		 * cells move 1 step up the cell-induced gradient
 		 */
-
 
 
 		for (int i=0; i < particles.size(); i++){
@@ -141,15 +153,15 @@ int main() {
 
 			double up = chemo(round(x)[0],round(x)[1]+1)- chemo(round(x)[0],round(x)[1]);		
 
-			cout << "up " << up << endl;
+			//cout << "up " << up << endl;
 			double down = chemo(round(x)[0],round(x)[1]-1)- chemo(round(x)[0],round(x)[1]);
-			cout << "down " << down << endl;
+			//cout << "down " << down << endl;
 			double right = chemo(round(x)[0]+1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
-			cout << "right " << right << endl;
+			//cout << "right " << right << endl;
 
 			double left = chemo(round(x)[0]-1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
 
-			cout << "left " << left << endl;
+			//cout << "left " << left << endl;
 
 			directions(0) = up;
 			directions(1) = down;
@@ -160,7 +172,7 @@ int main() {
 			// find maximum direction, if maximum is not unique, it chooses the one with the lowest coefficient, I will have to change that then it chooses randomly
 			Eigen::VectorXf::Index max_index;
 			double max_dir_index = directions.maxCoeff(&max_index);// do not forget from 0 to 3
-			cout << "max index " << max_index << endl;
+			//cout << "max index " << max_index << endl;
 			double change;
 
 			// do not move if maximum is negative
@@ -171,7 +183,7 @@ int main() {
 			}
 			// if not, then move up the gradient
 			else{
-			cout << "old position " << get<position>(particles)[i] << endl;
+			//cout << "old position " << get<position>(particles)[i] << endl;
 				if (max_index == 0)// up
 				{
 					get<position>(particles)[i] += vdouble2(0,step);
@@ -188,7 +200,7 @@ int main() {
 				{
 					get<position>(particles)[i] += vdouble2(-step,0);
 				}
-				cout << "new position " << get<position>(particles)[i] << endl;
+				//cout << "new position " << get<position>(particles)[i] << endl;
 				}
 			
 	
