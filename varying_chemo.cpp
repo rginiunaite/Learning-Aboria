@@ -22,18 +22,41 @@ using namespace Eigen; // objects VectorXf, MatrixXf
 int main() {
 
 	
-	int lattice_size = 1000;
+	int lattice_size = 10000;
 
 	// create matrices for the current value and the updated one
 	MatrixXf chemo(lattice_size,lattice_size), chemo_new(lattice_size,lattice_size); 	
 
-	// initially gradient is uniform
-	for (int i =0;i<lattice_size;i++){
-		for (int j=0;j<lattice_size;j++){
+	// initially gradient is uniform internally
+	for (int i =1;i<lattice_size-1;i++){
+		for (int j=1;j<lattice_size-1;j++){
 			chemo(i,j)=1;
 			chemo_new(i,j)=1;// this is for later updates, for now only interior, so set it to 0
 		}
 	}
+
+	// there is no chemoattractant on the boundary, to avoid all the cells gathering there, chemoattractant there is consumed at a slower rate than anywthere else
+
+	for (int i =0;i<lattice_size;i++){	
+		chemo(i,0)=0;
+		chemo_new(i,0)=0;// this is for later updates, for now only interior, so set it to 0
+	}
+
+	for (int i =0;i<lattice_size;i++){	
+		chemo(0,i)=0;
+		chemo_new(0,i)=0;// this is for later updates, for now only interior, so set it to 0
+	}
+
+	for (int i =0;i<lattice_size;i++){	
+		chemo(lattice_size -1,i)=0;
+		chemo_new(lattice_size -1,i)=0;// this is for later updates, for now only interior, so set it to 0
+	}
+
+	for (int i =0;i<lattice_size;i++){	
+		chemo(i,lattice_size -1)=0;
+		chemo_new(i,lattice_size -1)=0;// this is for later updates, for now only interior, so set it to 0
+	}
+
 
 
 	// save data to plot chemoattractant concentration in MATLAB
@@ -151,15 +174,15 @@ int main() {
 
 			VectorXf directions(4);
 
-			double up = chemo(round(x)[0],round(x)[1]+1)- chemo(round(x)[0],round(x)[1]);		
+			double up = chemo(round(x)[0]*mesh_per_domain,(round(x)[1]+1)*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);		
 
 			//cout << "up " << up << endl;
-			double down = chemo(round(x)[0],round(x)[1]-1)- chemo(round(x)[0],round(x)[1]);
+			double down = chemo(round(x)[0]*mesh_per_domain,(round(x)[1]-1)*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 			//cout << "down " << down << endl;
-			double right = chemo(round(x)[0]+1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
+			double right = chemo((round(x)[0]+1)*mesh_per_domain,round(x)[1]*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 			//cout << "right " << right << endl;
 
-			double left = chemo(round(x)[0]-1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
+			double left = chemo((round(x)[0]-1)*mesh_per_domain,round(x)[1]*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 
 			//cout << "left " << left << endl;
 
