@@ -106,14 +106,14 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 100;
+	const size_t N = 10;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
 	typedef particle_type::position position;
 	particle_type particles(N);
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(1,lattice_size-4);  
+	std::uniform_real_distribution<double> uniform(1,domain_len);  
 	for (int i=0; i<N; ++i) {
 	    get<position>(particles)[i] = vdouble2(1,uniform(gen)); // x=2, uniformly in y
 	
@@ -134,6 +134,8 @@ int main() {
 					vdouble2 x;
 					x = get<position>(particles[k]);
 					intern(i,j) = intern(i,j) + exp(- (domain_len*domain_len*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
+					cout << "xcoord" << x[0] << endl;
+					cout << "ycoord" << x[1] << endl;
 				}			
 			}
     		}		
@@ -173,6 +175,7 @@ int main() {
 			cout << "print coord of chemo x "<< round(x)[0]*mesh_per_domain-1 << endl;
 			cout << "print coord of chemo y "<< (round(x)[1])*mesh_per_domain << endl;
 			
+			
 			// approximate coordinates
 
 			int xplus1 = round(x)[0]*mesh_per_domain+1;
@@ -183,17 +186,17 @@ int main() {
 			int yeq = round(x)[1]*mesh_per_domain;
 
 			if (xplus1<0){xplus1=0;}
-			else if(xplus1>=100){xplus1=99;} 
+			else if(xplus1>=lattice_size){xplus1=lattice_size -1;} 
 			if (xminus1<0){xminus1=0;}
-			else if(xminus1>=100){xminus1=99;}
+			else if(xminus1>=lattice_size){xminus1=lattice_size -1;}
 			if (xeq<0){xeq=0;}
-			else if(xeq>=100){xeq=99;}
+			else if(xeq>=lattice_size){xeq=lattice_size -1;}
 			if (yplus1<0){yplus1=0;}
-			else if(yplus1>=100){yplus1=99;}
+			else if(yplus1>=lattice_size){yplus1=lattice_size -1;}
 			if (yminus1<0){yminus1=0;}
-			else if(yminus1>=100){yminus1=99;}
+			else if(yminus1>=lattice_size){yminus1=lattice_size -1;}
 			if (yeq<0){yeq=0;}
-			else if(yeq>=100){yeq=99;}
+			else if(yeq>=lattice_size){yeq=lattice_size -1;}
 			
 
 
@@ -222,11 +225,11 @@ ofstream output("final_chemo.txt");
 	  
 	for (int i =0;i<lattice_size;i++){
 		for(int j = 0;j<lattice_size;j++){
-        	//output << chemo(i,j) << " "; 
-		cout << chemo(i,j) << " ";
+        	output << chemo(i,j) << " "; 
+		//cout << chemo(i,j) << " ";
 		}
-		cout << "\n " << endl;
-		//output << "\n" << std::endl; 
+		//cout << "\n " << endl;
+		output << "\n" << std::endl; 
     	}	
 
 }
