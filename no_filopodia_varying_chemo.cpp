@@ -78,7 +78,7 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt =1; // time step, redundant
-	int t_final = 10; // final time	
+	int t_final = 50; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
