@@ -78,11 +78,11 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt =1; // time step, redundant
-	int t_final = 50; // final time	
+	int t_final = 60; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
-	int step = 10;
+
 
 
 	// initially assume that the domain length is fixed
@@ -123,7 +123,7 @@ int main() {
 	vtkWriteGrid("before",0,particles.get_grid(true));
 
 
-	for (int t=0;t<t_final;t++){
+	while (t < t_final){
 		
 
 		// internalisation
@@ -134,8 +134,8 @@ int main() {
 					vdouble2 x;
 					x = get<position>(particles[k]);
 					intern(i,j) = intern(i,j) + exp(- (domain_len*domain_len*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
-					cout << "xcoord" << x[0] << endl;
-					cout << "ycoord" << x[1] << endl;
+					//cout << "xcoord" << x[0] << endl;
+					//cout << "ycoord" << x[1] << endl;
 				}			
 			}
     		}		
@@ -145,9 +145,9 @@ int main() {
 		for (int i=1;i<lattice_size-1;i++){
 			for (int j=1;j<lattice_size-1;j++){
 				chemo_new(i,j) = dt * (D*((1/(domain_len*domain_len))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
-			cout << "print the internalisation term " << intern(i,j) << endl;
-			cout << "new chemo " << chemo_new(i,j) << endl;
-			cout << "chemo " << chemo(i,j) << endl;
+			//cout << "print the internalisation term " << intern(i,j) << endl;
+			//cout << "new chemo " << chemo_new(i,j) << endl;
+			//cout << "chemo " << chemo(i,j) << endl;
 			}
 		}
 		
@@ -170,10 +170,10 @@ int main() {
 
 			vdouble2 x;
 			x = get<position>(particles[i]);
-			cout << "print coord of chemo x1 "<< round(x)[0]*mesh_per_domain+1 << endl;
-			cout << "print coord of chemo y1 "<< (round(x)[1])*mesh_per_domain << endl;
-			cout << "print coord of chemo x "<< round(x)[0]*mesh_per_domain-1 << endl;
-			cout << "print coord of chemo y "<< (round(x)[1])*mesh_per_domain << endl;
+			//cout << "print coord of chemo x1 "<< round(x)[0]*mesh_per_domain+1 << endl;
+			//cout << "print coord of chemo y1 "<< (round(x)[1])*mesh_per_domain +1 << endl;
+			//cout << "print coord of chemo x "<< round(x)[0]*mesh_per_domain-1 << endl;
+			//cout << "print coord of chemo y "<< (round(x)[1])*mesh_per_domain -1 << endl;
 			
 			
 			// approximate coordinates
@@ -200,10 +200,20 @@ int main() {
 			
 
 
-			double change_x = chemo(xplus1,yeq)-chemo(xminus1,yeq);
+			//double change_x = (chemo(xplus1,yeq)-chemo(xminus1,yeq))/(chemo(xeq,yeq)); relative
 
-			double change_y = chemo(xeq,yplus1)-chemo(xeq,yminus1);
-					
+			//double change_y = (chemo(xeq,yplus1)-chemo(xeq,yminus1))/(chemo(xeq,yeq)); relative
+
+
+			double change_x = (chemo(xplus1,yeq)-chemo(xminus1,yeq));
+
+			double change_y = (chemo(xeq,yplus1)-chemo(xeq,yminus1)); 
+
+
+			cout << "step size in x direction " << change_x << endl;
+
+			cout << "step size in y direction " << change_y << endl;
+ 					
 			get<position>(particles)[i] += vdouble2(change_x,change_y);
 
 			// do not move if maximum is negative
@@ -212,7 +222,7 @@ int main() {
 		}//end of < particle_size
 		//particles.update_positions();
 		
-
+	t = t +dt;
 
 	}// end of for loop with t<t_final
 
