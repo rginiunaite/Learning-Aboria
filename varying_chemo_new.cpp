@@ -55,11 +55,11 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt =1; // time step, redundant
-	int t_final = 10; // final time	
+	int t_final = 50; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
-	int step = 10;
+	int step = 1;
 
 
 	// initially assume that the domain length is fixed
@@ -83,7 +83,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 100;
+	const size_t N = 2;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -92,7 +92,7 @@ int main() {
 	std::default_random_engine gen;
 	std::uniform_real_distribution<double> uniform(0,lattice_size);  
 	for (int i=0; i<N; ++i) {
-	    get<position>(particles)[i] = vdouble2(2,uniform(gen)); // x=2, uniformly in y
+	    get<position>(particles)[i] = vdouble2(1,uniform(gen)); // x=2, uniformly in y
 	
 	}
 
@@ -151,15 +151,15 @@ int main() {
 
 			VectorXf directions(4);
 
-			double up = chemo(round(x)[0],round(x)[1]+1)- chemo(round(x)[0],round(x)[1]);		
+			double up = chemo(round(x)[0]*mesh_per_domain,(round(x)[1]+1)*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);		
 
 			//cout << "up " << up << endl;
-			double down = chemo(round(x)[0],round(x)[1]-1)- chemo(round(x)[0],round(x)[1]);
+			double down = chemo(round(x)[0]*mesh_per_domain,(round(x)[1]-1)*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 			//cout << "down " << down << endl;
-			double right = chemo(round(x)[0]+1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
+			double right = chemo((round(x)[0]+1)*mesh_per_domain,round(x)[1]*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 			//cout << "right " << right << endl;
 
-			double left = chemo(round(x)[0]-1,round(x)[1])- chemo(round(x)[0],round(x)[1]);
+			double left = chemo((round(x)[0]-1)*mesh_per_domain,round(x)[1]*mesh_per_domain)- chemo(round(x)[0]*mesh_per_domain,round(x)[1]*mesh_per_domain);
 
 			//cout << "left " << left << endl;
 
