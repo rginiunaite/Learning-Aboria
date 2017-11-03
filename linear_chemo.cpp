@@ -30,7 +30,7 @@ int main() {
 	// generate gradient which linearly increases
 	for (int i = 0;i<length;i++){
 		for (int j = 0; j< length; j++){
-			chemo(i,j) = j*j;
+			chemo(i,j) = i; // down the rows increases
 		}			
 	}
 
@@ -57,7 +57,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 10;
+	const size_t N = 5;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -78,7 +78,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 10; // number of times the cells move up the gradient
+	int N_steps = 30; // number of times the cells move up the gradient
 	int step = 1;
 
 for (int j=0; j<N_steps;j++){
@@ -133,19 +133,19 @@ for (int j=0; j<N_steps;j++){
 			//cout << "old position " << get<position>(particles)[i] << endl;
 					if (max_index == 0)// up
 					{
-						get<position>(particles)[i] += vdouble2(0,step);
+						get<position>(particles)[i] += vdouble2(step,0);
 					}
 					if (max_index == 1)// down
 					{
-						get<position>(particles)[i] += vdouble2(0,-step);
+						get<position>(particles)[i] += vdouble2(-step,0);
 					}
 					if (max_index == 2)// right
 					{
-						get<position>(particles)[i] += vdouble2(step,0);
+						get<position>(particles)[i] += vdouble2(0,step);
 					}
 					if (max_index == 3)// left
 					{
-						get<position>(particles)[i] += vdouble2(-step,0);
+						get<position>(particles)[i] += vdouble2(0,-step);
 					}
 			//cout << "new position " << get<position>(particles)[i] << endl;
 			}
