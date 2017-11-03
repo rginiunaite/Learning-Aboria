@@ -31,7 +31,19 @@ list(APPEND INCLUDES Aboria/third-party)
 include_directories(src ${INCLUDES})
 
 
-add_executable(fixed_gradient fixed_gradient.cpp)
+#add_executable(fixed_gradient fixed_gradient.cpp)
+#add_executable(fixed_gradient2 fixed_gradient2.cpp)
+#add_executable(varying_chemo varying_chemo_new.cpp)
+#add_executable(no_filopodia_varying_chemo no_filopodia_varying_chemo.cpp)
+add_executable(linear_chemo linear_chemo.cpp)
+#add_executable(linear_chemo_random linear_chemo_random.cpp)
+#add_executable(linear_move_up_the_gradient linear_move_up_the_gradient.cpp)
 
+#target_link_libraries(fixed_gradient ${LIBRARIES})
+#target_link_libraries(fixed_gradient2 ${LIBRARIES})
+#target_link_libraries(varying_chemo ${LIBRARIES})
+#target_link_libraries(no_filopodia_varying_chemo ${LIBRARIES})
+target_link_libraries(linear_chemo ${LIBRARIES})
+#target_link_libraries(linear_chemo_random ${LIBRARIES})
+#target_link_libraries(linear_move_up_the_gradient ${LIBRARIES})
 
-target_link_libraries(fixed_gradient ${LIBRARIES})
