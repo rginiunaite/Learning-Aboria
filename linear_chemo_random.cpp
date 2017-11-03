@@ -31,7 +31,7 @@ int main() {
 	// generate gradient which linearly increases
 	for (int i = 0;i<length;i++){
 		for (int j = 0; j< length; j++){
-			chemo(i,j) = i*i;
+			chemo(i,j) = i; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
 		}			
 	}
 
@@ -58,7 +58,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 10;
+	const size_t N = 5;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -79,7 +79,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 4; // number of times the cells move up the gradient
+	int N_steps = 10; // number of times the cells move up the gradient
 	
 
 	// choose a set of random number between 0 and 2pi
@@ -109,25 +109,27 @@ for (int j=0; j<N_steps;j++){
 		//sign(cos(random_angle(rand_num_count)))
 		//sign(sin(random_angle(rand_num_count)))
 		
-		// make sure that I choose the right direction
+		// make sure that I choose the right direction when taking into account cell radius
 		int sign_x, sign_y;
-		if(cos(random_angle(rand_num_count))<0){
+		if(sin(random_angle(rand_num_count))<0){
 			sign_x=-1;
 		}else{sign_x=1;}
 
-		if(sin(random_angle(rand_num_count))<0){
+		if(cos(random_angle(rand_num_count))<0){
 			sign_y=-1;
 		}else{sign_y=1;}
 			
 
-		if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0] + cos(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+sin(random_angle(rand_num_count))+sign_y*cell_size))){
+		// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
+
+		if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
 			cout << "x coord " << x[0] << endl;
-			cout << "x up " << cos(random_angle(rand_num_count))+sign_x*cell_size << endl;
+			cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
 			cout << "y coord " << x[1] << endl;
-			cout << "y up " << sin(random_angle(rand_num_count))+sign_y*cell_size << endl;	
+			cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
 			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo coonc in other site " << chemo(round(x[0] + cos(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+sin(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
-			get<position>(particles)[i] += vdouble2(cos(random_angle(rand_num_count))+sign_x*cell_size,sin(random_angle(rand_num_count))+sign_y*cell_size);
+			cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
+			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
 		}
 
 			rand_num_count += 1; // update random number count
