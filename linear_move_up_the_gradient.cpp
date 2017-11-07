@@ -82,18 +82,6 @@ int main() {
 	int N_steps = 30; // number of times the cells move up the gradient
 	
 
-	// choose a set of random number between 0 and 2pi
-		std::default_random_engine gen1;
-		std::uniform_real_distribution<double> uniformpi(0,2*M_PI);
-		VectorXf random_angle(N_steps*particles.size());  
-
-		for (int i = 0; i<N_steps*particles.size();i++){
-			random_angle(i) = uniformpi(gen1);		
-			cout << "angle to move " << random_angle(i) << endl;
-		}
-
-	int rand_num_count = 0;
-
 for (int j=0; j<N_steps;j++){
 	for (int i=0; i < particles.size(); i++){
 		
@@ -105,11 +93,11 @@ for (int j=0; j<N_steps;j++){
 
 			// approximate coordinates
 
-			int xplus1 = round(x)[0]+1;
-			int xminus1 = round(x)[0]-1;
+			int xplus1 = round(x)[0]+cell_size +1;
+			int xminus1 = round(x)[0]-cell_size-1;
 			int xeq = round(x)[0];
-			int yplus1 = round(x)[1]+1;
-			int yminus1 = round(x)[1]-1;
+			int yplus1 = round(x)[1]+cell_size+1;
+			int yminus1 = round(x)[1]-cell_size-1;
 			int yeq = round(x)[1];
 
 			//cout << "chemo x coord plus before " << xplus1 << endl;
@@ -141,14 +129,14 @@ for (int j=0; j<N_steps;j++){
 			//cout << "chemo y coord minus  " << yminus1 << endl;
 
 
-			double change_x = (chemo(xplus1,yeq)-chemo(xminus1,yeq));
+			double change_x = (chemo(xplus1,yeq)-chemo(xminus1,yeq))/(chemo(xeq,yeq));
 
-			double change_y = (chemo(xeq,yplus1)-chemo(xeq,yminus1)); 
+			double change_y = (chemo(xeq,yplus1)-chemo(xeq,yminus1))/(chemo(xeq,yeq)); 
 
 
-			//cout << "step size in x direction " << change_x << endl;
+			cout << "step size in x direction " << change_x << endl;
 
-			//cout << "step size in y direction " << change_y << endl;
+			cout << "step size in y direction " << change_y << endl;
 
 			//cout << "position x coord before " << get<position>(particles)[i][0] << endl;
 
