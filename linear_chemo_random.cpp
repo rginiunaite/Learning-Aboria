@@ -38,15 +38,51 @@ int main() {
 
 
 	
-	// save data to plot chemoattractant concentration in MATLAB
-	ofstream output("matrix.txt");
+
 	  
-	for (int i =0;i<length;i++){
+	/*for (int i =0;i<length;i++){
 		for(int j = 0;j<length;j++){
-        	output << chemo(i,j) << " "; 
+        	output << chemo(i,j) << ", "; 
 		}
 		output << "\n" << std::endl; 
-    	}	
+    	}*/
+
+	// three columns for x, y, z
+	
+	// form a matrix which would store x,y,z
+
+	MatrixXf chemo_3col(length*length,3);
+
+	// x, y coord, 1st and 2nd columns respectively
+	int k = 0;
+		
+	while (k<length*length){
+		for (int i = 0;i<length;i++){
+			for (int j = 0; j< length; j++){
+				chemo_3col(k,0) = i; 
+				chemo_3col(k,1) =j;
+				k += 1;
+			}			
+		}
+	}
+
+	// z column
+	for (int i=0;i<length*length;i++){
+		chemo_3col(i,2) = chemo(chemo_3col(i,0),chemo_3col(i,1));
+	}
+
+	// save data to plot chemoattractant concentration in MATLAB
+	ofstream output("matrix_3col.csv");
+	
+		output << "x, y, z" << "\n" << endl;
+
+
+	for (int i=0;i<length*length;i++){
+		for(int j=0;j<3;j++){
+			output << chemo_3col(i,j) << ", ";
+		}
+		output << "\n" << endl;
+	}	
 
 	
 
@@ -58,7 +94,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 5;
+	const size_t N = 10;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -79,7 +115,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 10; // number of times the cells move up the gradient
+	int N_steps = 100; // number of times the cells move up the gradient
 	
 
 	// choose a set of random number between 0 and 2pi
@@ -129,7 +165,8 @@ for (int j=0; j<N_steps;j++){
 			cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
 			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
 			cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
-			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
+			//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
+			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 		}
 
 			rand_num_count += 1; // update random number count
