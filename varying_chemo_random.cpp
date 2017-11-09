@@ -102,7 +102,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 1; // number of times the cells move up the gradient
+	int N_steps = t_final; // number of times the cells move up the gradient
 
 	// choose a set of random number between 0 and 2pi
 		std::default_random_engine gen1;
@@ -137,9 +137,9 @@ int main() {
 		for (int i=1;i<lattice_size-1;i++){
 			for (int j=1;j<lattice_size-1;j++){
 				chemo_new(i,j) = dt * (D*((1/(domain_len*domain_len))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
-			cout << "print the internalisation term " << intern(i,j) << endl;
-			cout << "new chemo " << chemo_new(i,j) << endl;
-			cout << "chemo " << chemo(i,j) << endl;
+			//cout << "print the internalisation term " << intern(i,j) << endl;
+			//cout << "new chemo " << chemo_new(i,j) << endl;
+			//cout << "chemo " << chemo(i,j) << endl;
 			}
 		}
 		
@@ -163,10 +163,10 @@ int main() {
 			vdouble2 x;
 			x = get<position>(particles[i]);
 		
-				//cout << "x coord " << x[0] << endl;	
+			//cout << "x coord " << x[0] << endl;	
 
 
-			cout << " code stops here"<< sin(random_angle(rand_num_count) << endl;
+			
 			// check if chemoattractant concentration is greater at the random direction we selected
 			//sign(cos(random_angle(rand_num_count)))
 			//sign(sin(random_angle(rand_num_count)))
@@ -185,8 +185,8 @@ int main() {
 			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
 			cout << "xcoord  "<< round(x)[0] << endl;
-			cout << "xcoord new "<< round(x)[1] << endl;
-			cout << "ycoord "<< round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size) << endl;
+			cout << "y coord  "<< round(x)[1] << endl;
+			cout << "x coord new "<< round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size) << endl;
 			cout << "ycoord new " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) << endl;
 
 			cout << "chemo at current position "<< chemo(round(x)[0],round(x)[1]) << endl;
