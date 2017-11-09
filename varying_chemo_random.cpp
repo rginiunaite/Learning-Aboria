@@ -56,7 +56,7 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt = 1; // time step, redundant
-	int t_final = 50; // final time	
+	int t_final = 100; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
@@ -134,9 +134,12 @@ int main() {
 
 		
 		// internal part of the chemoattractant, finite difference for reaction diffusion equation
+/*
+	NOW REMOVED CHANGE IN THE DOMAIN TO HAVE LARGER CONSUMPTION IN X AXIS
+*/
 		for (int i=1;i<lattice_size-1;i++){
 			for (int j=1;j<lattice_size-1;j++){
-				chemo_new(i,j) = dt * (D*((1/(domain_len*domain_len))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
+				chemo_new(i,j) = dt * (D*((1/(1))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
 			//cout << "print the internalisation term " << intern(i,j) << endl;
 			//cout << "new chemo " << chemo_new(i,j) << endl;
 			//cout << "chemo " << chemo(i,j) << endl;
@@ -214,16 +217,59 @@ int main() {
 
 	
 // save particles after they move
-vtkWriteGrid("after",0,particles.get_grid(true));
+ vtkWriteGrid("after",0,particles.get_grid(true));
 
 // save data for final chemoattractant concentration
-ofstream output("final_chemo.txt");
+/* ofstream output("final_chemo.txt");
 	  
 	for (int i =0;i<lattice_size;i++){
 		for(int j = 0;j<lattice_size;j++){
         	output << chemo(i,j) << " "; 
 		}
 		output << "\n" << std::endl; 
-    	}	
+    	} */	
+
+/// save matrix in 4 columns
+	int length =lattice_size;
+	MatrixXf chemo_3col(length*length,4);
+
+	// x, y coord, 1st and 2nd columns respectively
+	int k = 0;
+	
+		
+	while (k<length*length){
+		for (int i = 0;i<length;i++){
+			for (int j = 0; j< length; j++){
+				chemo_3col(k,0) = i; 
+				chemo_3col(k,1) = j;
+				chemo_3col(k,2) = 0;
+				k += 1;
+			}			
+		}
+	}
+
+	// z column
+	for (int i=0;i<length*length;i++){
+		chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
+		
+	}
+
+	// save data to plot chemoattractant concentration in MATLAB
+	ofstream output("matrix_3col.csv");
+	
+		output << "x, y, z, u" << "\n" << endl;
+
+
+	for (int i=0;i<length*length;i++){
+		for(int j=0;j<4;j++){
+			output << chemo_3col(i,j) << ", ";
+		}
+		output << "\n" << endl;
+	}	
+
+
+
+
+
 
 }
