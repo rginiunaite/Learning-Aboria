@@ -51,7 +51,7 @@ int main() {
 	
 	// form a matrix which would store x,y,z
 
-	MatrixXf chemo_3col(length*length,3);
+	MatrixXf chemo_3col(length*length,4);
 
 	// x, y coord, 1st and 2nd columns respectively
 	int k = 0;
@@ -60,7 +60,8 @@ int main() {
 		for (int i = 0;i<length;i++){
 			for (int j = 0; j< length; j++){
 				chemo_3col(k,0) = i; 
-				chemo_3col(k,1) =j;
+				chemo_3col(k,1) = j;
+				chemo_3col(k,2) = 0;
 				k += 1;
 			}			
 		}
@@ -68,17 +69,17 @@ int main() {
 
 	// z column
 	for (int i=0;i<length*length;i++){
-		chemo_3col(i,2) = chemo(chemo_3col(i,0),chemo_3col(i,1));
+		chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
 	}
 
 	// save data to plot chemoattractant concentration in MATLAB
 	ofstream output("matrix_3col.csv");
 	
-		output << "x, y, z" << "\n" << endl;
+		output << "x, y, z, u" << "\n" << endl;
 
 
 	for (int i=0;i<length*length;i++){
-		for(int j=0;j<3;j++){
+		for(int j=0;j<4;j++){
 			output << chemo_3col(i,j) << ", ";
 		}
 		output << "\n" << endl;
