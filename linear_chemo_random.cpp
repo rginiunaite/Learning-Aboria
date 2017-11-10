@@ -51,7 +51,7 @@ int main() {
 	
 	// form a matrix which would store x,y,z
 
-	MatrixXf chemo_3col(length*length,4);
+	/* MatrixXf chemo_3col(length*length,4);
 
 	// x, y coord, 1st and 2nd columns respectively
 	int k = 0;
@@ -83,7 +83,7 @@ int main() {
 			output << chemo_3col(i,j) << ", ";
 		}
 		output << "\n" << endl;
-	}	
+	}	*/
 
 	
 
@@ -95,7 +95,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 10;
+	const size_t N = 5;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -116,12 +116,12 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 100; // number of times the cells move up the gradient
+	int N_steps = 50; // number of times the cells move up the gradient
 	
 
 	// choose a set of random number between 0 and 2pi
 		std::default_random_engine gen1;
-		std::uniform_real_distribution<double> uniformpi(0,2*M_PI);
+		std::uniform_real_distribution<double> uniformpi(0,M_PI); // can only move forward
 		VectorXf random_angle(N_steps*particles.size());  
 
 		for (int i = 0; i<N_steps*particles.size();i++){
@@ -156,20 +156,36 @@ for (int j=0; j<N_steps;j++){
 			sign_y=-1;
 		}else{sign_y=1;}
 			
+		//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
+		//cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;
+
+		
+		// check if the x coordinates are not out of the domain, if they are, ignore that step
+		
+		//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size) << endl;
+		//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_size) << endl;
+
+		if (round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)>-1 && round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)<length && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)<length ){
+
+		//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
+		//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
 
 		// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
-		if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
-			cout << "x coord " << x[0] << endl;
-			cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
-			cout << "y coord " << x[1] << endl;
-			cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
-			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
-			//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
-			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
-		}
+			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
+				cout << "x coord " << x[0] << endl;
+				cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
+				cout << "y coord " << x[1] << endl;
+				cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
+				cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+				cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
+				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
+				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 
+
+
+			}
+		}
 			rand_num_count += 1; // update random number count
 			
 	}
