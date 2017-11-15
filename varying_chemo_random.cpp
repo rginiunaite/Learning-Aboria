@@ -59,7 +59,7 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt = 1; // time step, redundant
-	int t_final = 10; // final time	
+	int t_final = 40; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
@@ -89,7 +89,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 5;
+	const size_t N = 20;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -132,7 +132,7 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- 100*(domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- 1000*(domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
 					cout << "internalisation rate " << intern(i,j) << endl;
 				}			
 			}
