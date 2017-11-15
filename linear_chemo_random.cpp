@@ -22,22 +22,26 @@ int main() {
 
 
 
-	const int length = 100; // length of the chemoattractant vector
+	const int length_x = 200; // length of the chemoattractant vector
+	const int length_y = 50;
+
+
+	
+	const double diameter = 1; // diameter in which there have to be no cells
+
+
 
 	int cell_size = 2; // cell size relative to mesh
 
-	MatrixXf chemo(length, length);	
+	MatrixXf chemo(length_x, length_y);	
 
 	// generate gradient which linearly increases
-	for (int i = 0;i<length;i++){
-		for (int j = 0; j< length; j++){
+	for (int i = 0;i<length_x;i++){
+		for (int j = 0; j< length_y; j++){
 			chemo(i,j) = i; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
 		}			
 	}
 
-
-
-	
 
 	  
 	/*for (int i =0;i<length;i++){
@@ -51,14 +55,14 @@ int main() {
 	
 	// form a matrix which would store x,y,z
 
-	/* MatrixXf chemo_3col(length*length,4);
+	/* MatrixXf chemo_3col(length_x*length_y,4);
 
 	// x, y coord, 1st and 2nd columns respectively
 	int k = 0;
-		
-	while (k<length*length){
-		for (int i = 0;i<length;i++){
-			for (int j = 0; j< length; j++){
+		// it has to be 3D for paraview
+	while (k<length_x*length_y){
+		for (int i = 0;i<length_x;i++){
+			for (int j = 0; j< length_y; j++){
 				chemo_3col(k,0) = i; 
 				chemo_3col(k,1) = j;
 				chemo_3col(k,2) = 0;
@@ -67,8 +71,8 @@ int main() {
 		}
 	}
 
-	// z column
-	for (int i=0;i<length*length;i++){
+	// u column
+	for (int i=0;i<length_x*length_y;i++){
 		chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
 	}
 
@@ -78,7 +82,7 @@ int main() {
 		output << "x, y, z, u" << "\n" << endl;
 
 
-	for (int i=0;i<length*length;i++){
+	for (int i=0;i<length_x*length_y;i++){
 		for(int j=0;j<4;j++){
 			output << chemo_3col(i,j) << ", ";
 		}
@@ -95,14 +99,14 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 5;
+	const size_t N = 25;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
 	typedef particle_type::position position;
 	particle_type particles(N);
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(1,length);  
+	std::uniform_real_distribution<double> uniform(1,length_y);  
 	for (int i=0; i<N; ++i) {
 	    get<position>(particles)[i] = vdouble2(4,uniform(gen)); // x=2, uniformly in y
 	
@@ -111,12 +115,19 @@ int main() {
 	// save particles before they move
 	vtkWriteGrid("before",0,particles.get_grid(true));
 
-	
+	/*
+         * initialise neighbour search with 2d cuboid domain,
+         * periodic in x and y
+         */
+
+        particles.init_neighbour_search(vdouble2(0,0),vdouble2(length_x,length_y),vbool2(false,false));
+
+        
 	
 
 	// Update positions based on the gradient
 
-	int N_steps = 50; // number of times the cells move up the gradient
+	int N_steps = 1000; // number of times the cells move up the gradient
 	
 
 	// choose a set of random number between 0 and 2pi
@@ -165,7 +176,7 @@ for (int j=0; j<N_steps;j++){
 		//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size) << endl;
 		//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_size) << endl;
 
-		if (round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)>-1 && round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)<length && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)<length ){
+		if (round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)>-1 && round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)<length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)<length_y ){
 
 		//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
 		//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
@@ -180,14 +191,50 @@ for (int j=0; j<N_steps;j++){
 				cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
 				cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
 				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
-				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 
+	// check if there are no cells around the position where I want to move
 
+                /*
+                 * loop over all neighbouring particles within a euclidean distance
+                 * of size "diameter"
+                 */
+		x += vdouble2(sin(random_angle(rand_num_count)),cos(random_angle(rand_num_count)));
+
+		cout << "Position "<< x << endl;
+		int count_position = 0;
+		bool free_position = true; // check if the neighbouring position is free
+
+                for (auto tpl: euclidean_search(particles.get_query(),x,diameter)) {
+
+                    /*
+                     * tpl variable is a tuple containing:
+                     *  (0) -> neighbouring particle value_type
+                     *  (1) -> relative position of neighbouring particle
+                     *         from query point
+                     *  e.g.
+                     *
+                     *  const vdouble2& dx = std::get<1>(tpl);
+                     *  const typename container_type::value_type& j = std::get<0>(tpl);
+                     */
+
+			count_position +=1;
+
+		    /*const vdouble2& dx = get<1>(tpl);
+                    const particles_type::value_type& j = get<0>(tpl);
+                    if (dx.norm() < diameter) {
+                        free_position = false;
+                        break;*/
+                    free_position = false;
+                    //break;
+                }
+		cout << "print position " << count_position << endl;
+		if (free_position == true){
+			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+		}
 
 			}
 		}
-			rand_num_count += 1; // update random number count
-			
+			rand_num_count += 1; // update random number count			
 	}
 	//particles.update_positions();
 
