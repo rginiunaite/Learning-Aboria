@@ -22,17 +22,20 @@ using namespace Eigen; // objects VectorXf, MatrixXf
 int main() {
 
 	
-	int lattice_size = 100;
+	int lattice_size_x = 100;
+	int lattice_size_y = 100;
 	int cell_size = 2; // cell size relative to mesh
+	int length_x = lattice_size_x;
+	int length_y = lattice_size_y;
 
 	// create matrices for the current value and the updated one
-	MatrixXf chemo(lattice_size,lattice_size), chemo_new(lattice_size,lattice_size); 	
+	MatrixXf chemo(lattice_size_x,lattice_size_y), chemo_new(lattice_size_x,lattice_size_y); 	
 
 	// initially gradient is uniform
-	for (int i =0;i<lattice_size;i++){
-		for (int j=0;j<lattice_size;j++){
+	for (int i =0;i<lattice_size_x;i++){
+		for (int j=0;j<lattice_size_y;j++){
 			chemo(i,j)=1;
-			chemo_new(i,j)=0;// this is for later updates, for now only interior, so set it to 0
+			chemo_new(i,j)=1;// this is for later updates, for now only interior, so set it to 0
 		}
 	}
 
@@ -56,7 +59,7 @@ int main() {
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt = 1; // time step, redundant
-	int t_final = 100; // final time	
+	int t_final = 10; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
@@ -65,10 +68,12 @@ int main() {
 
 	// initially assume that the domain length is fixed
 	
-	int domain_len = 100;
+	int domain_len_x = 300;
+	int domain_len_y = 50;
+	int domain_len_tem = 1;
 	double domain_len_der = 0; // for now this is useless
 
-	int mesh_per_domain = lattice_size/domain_len; // the ratio between total mesh points and domain length
+	int mesh_per_domain = 1;//lattice_size/domain_len; // the ratio between total mesh points and domain length
 
 	// parameters for internalisation
 
@@ -78,7 +83,7 @@ int main() {
 	 
 
 	// initialise internalisation matrix
-	MatrixXf intern(lattice_size,lattice_size);
+	MatrixXf intern(lattice_size_x,lattice_size_y);
 
 	/*
 	 * initial cells	
@@ -91,9 +96,9 @@ int main() {
 	typedef particle_type::position position;
 	particle_type particles(N);
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(0,lattice_size);  
+	std::uniform_real_distribution<double> uniform(0,lattice_size_y);  
 	for (int i=0; i<N; ++i) {
-	    get<position>(particles)[i] = vdouble2(4,uniform(gen)); // x=2, uniformly in y
+	    get<position>(particles)[i] = vdouble2(1,uniform(gen)); // x=2, uniformly in y
 	
 	}
 
@@ -106,7 +111,7 @@ int main() {
 
 	// choose a set of random number between 0 and 2pi
 		std::default_random_engine gen1;
-		std::uniform_real_distribution<double> uniformpi(0,2*M_PI);
+		std::uniform_real_distribution<double> uniformpi(0,M_PI);
 		VectorXf random_angle(N_steps*particles.size());  
 
 		for (int i = 0; i<N_steps*particles.size();i++){
@@ -121,13 +126,14 @@ int main() {
 		
 
 		// internalisation
-		for (int i =0;i<lattice_size;i++){
-			for(int j = 0;j<lattice_size;j++){
+		for (int i =0;i<lattice_size_x;i++){
+			for(int j = 0;j<lattice_size_y;j++){
 				//go thorugh all the cells
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- (domain_len*domain_len*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- 100*(domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
+					cout << "internalisation rate " << intern(i,j) << endl;
 				}			
 			}
     		}		
@@ -137,9 +143,9 @@ int main() {
 /*
 	NOW REMOVED CHANGE IN THE DOMAIN TO HAVE LARGER CONSUMPTION IN X AXIS
 */
-		for (int i=1;i<lattice_size-1;i++){
-			for (int j=1;j<lattice_size-1;j++){
-				chemo_new(i,j) = dt * (D*((1/(1))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  ) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len *chemo(i,j) ) + chemo(i,j);
+		for (int i=1;i<lattice_size_x-1;i++){
+			for (int j=1;j<lattice_size_y-1;j++){
+				chemo_new(i,j) = dt * (D*((1/(domain_len_tem*domain_len_tem))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  )  - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len_x *chemo(i,j) ) + chemo(i,j);
 			//cout << "print the internalisation term " << intern(i,j) << endl;
 			//cout << "new chemo " << chemo_new(i,j) << endl;
 			//cout << "chemo " << chemo(i,j) << endl;
@@ -187,14 +193,21 @@ int main() {
 
 			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
-			cout << "xcoord  "<< round(x)[0] << endl;
+			/*cout << "xcoord  "<< round(x)[0] << endl;
 			cout << "y coord  "<< round(x)[1] << endl;
 			cout << "x coord new "<< round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size) << endl;
 			cout << "ycoord new " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) << endl;
 
 			cout << "chemo at current position "<< chemo(round(x)[0],round(x)[1]) << endl;
 
-			cout << "chemo at other position "<< chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)) << endl;
+			cout << "chemo at other position "<< chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)) << endl;*/
+
+
+	// check if the x coordinates are not out of the domain, if they are, ignore that step
+
+
+		if (round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)>-1 && round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size)<length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size)<length_y ){
+
 
 			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
 				cout << "x coord " << x[0] << endl;
@@ -206,7 +219,7 @@ int main() {
 				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
 				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 			}
-
+		}
 				rand_num_count += 1; // update random number count
 			
 		}
@@ -230,16 +243,16 @@ int main() {
     	} */	
 
 /// save matrix in 4 columns
-	int length =lattice_size;
-	MatrixXf chemo_3col(length*length,4);
+
+	MatrixXf chemo_3col(length_x*length_y,4);
 
 	// x, y coord, 1st and 2nd columns respectively
 	int k = 0;
 	
 		
-	while (k<length*length){
-		for (int i = 0;i<length;i++){
-			for (int j = 0; j< length; j++){
+	while (k<length_x*length_y){
+		for (int i = 0;i<length_x;i++){
+			for (int j = 0; j< length_y; j++){
 				chemo_3col(k,0) = i; 
 				chemo_3col(k,1) = j;
 				chemo_3col(k,2) = 0;
@@ -249,7 +262,7 @@ int main() {
 	}
 
 	// z column
-	for (int i=0;i<length*length;i++){
+	for (int i=0;i<length_x*length_y;i++){
 		chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
 		
 	}
@@ -260,7 +273,7 @@ int main() {
 		output << "x, y, z, u" << "\n" << endl;
 
 
-	for (int i=0;i<length*length;i++){
+	for (int i=0;i<length_x*length_y;i++){
 		for(int j=0;j<4;j++){
 			output << chemo_3col(i,j) << ", ";
 		}
