@@ -22,11 +22,13 @@ using namespace Eigen; // objects VectorXf, MatrixXf
 int main() {
 
 	
-	int lattice_size_x = 100;
-	int lattice_size_y = 100;
+	int lattice_size_x = 240;
+	int lattice_size_y = 120;
 	int cell_size = 2; // cell size relative to mesh
 	int length_x = lattice_size_x;
 	int length_y = lattice_size_y;
+	
+	const double diameter = 1; // diameter in which there have to be no cells
 
 	// create matrices for the current value and the updated one
 	MatrixXf chemo(lattice_size_x,lattice_size_y), chemo_new(lattice_size_x,lattice_size_y); 	
@@ -58,8 +60,8 @@ int main() {
 	// parameters
 	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
-	double dt = 1; // time step, redundant
-	int t_final = 40; // final time	
+	double dt = 0.1; // time step, redundant
+	int t_final = 10; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
@@ -89,7 +91,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 20;
+	const size_t N = 8;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -104,6 +106,17 @@ int main() {
 
 	// save particles before they move
 	vtkWriteGrid("before",0,particles.get_grid(true));
+
+
+	/*
+         * initialise neighbour search with 2d cuboid domain,
+         * periodic in x and y
+         */
+
+        particles.init_neighbour_search(vdouble2(0,0),vdouble2(length_x,length_y),vbool2(false,false));
+
+        
+	
 
 	// Update positions based on the gradient
 
@@ -132,7 +145,7 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- 1000*(domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- (domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
 					cout << "internalisation rate " << intern(i,j) << endl;
 				}			
 			}
@@ -140,17 +153,15 @@ int main() {
 
 		
 		// internal part of the chemoattractant, finite difference for reaction diffusion equation
-/*
-	NOW REMOVED CHANGE IN THE DOMAIN TO HAVE LARGER CONSUMPTION IN X AXIS
-*/
-		for (int i=1;i<lattice_size_x-1;i++){
-			for (int j=1;j<lattice_size_y-1;j++){
-				chemo_new(i,j) = dt * (D*((1/(domain_len_tem*domain_len_tem))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  )  - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len_x *chemo(i,j) ) + chemo(i,j);
-			//cout << "print the internalisation term " << intern(i,j) << endl;
-			//cout << "new chemo " << chemo_new(i,j) << endl;
-			//cout << "chemo " << chemo(i,j) << endl;
+		//for (double dt =0.1 ; dt<1.1; dt = dt+0.1){
+			for (int i=1;i<lattice_size_x-1;i++){
+				for (int j=1;j<lattice_size_y-1;j++){
+					chemo_new(i,j) = dt * (D*((1/(domain_len_tem*domain_len_tem))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)  )  - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - domain_len_der/domain_len_x *chemo(i,j) ) + chemo(i,j);
+				}
+				//cout << "print the internalisation term " << intern(i,j) << endl;
+				//cout << "new chemo " << chemo_new(i,j) << endl;
 			}
-		}
+		//}
 		
 
 		// change only the interior
@@ -217,7 +228,25 @@ int main() {
 				cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
 				cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
 				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
-				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+
+		x += vdouble2(sin(random_angle(rand_num_count)),cos(random_angle(rand_num_count)));
+
+		//cout << "Position "<< x << endl;
+		int count_position = 0;
+		bool free_position = true; // check if the neighbouring position is free
+
+		// if this loop is entered, it means taht there is another cell where I want to move 
+                for (auto tpl: euclidean_search(particles.get_query(),x,diameter)) {
+
+			count_position += 1; // just to check if this works
+
+                    free_position = false;
+                    //break;
+                }
+		//cout << "print position " << count_position << endl;
+		if (free_position == true){
+			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+		}
 			}
 		}
 				rand_num_count += 1; // update random number count
