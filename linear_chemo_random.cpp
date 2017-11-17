@@ -99,7 +99,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 25;
+	const size_t N = 50;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -127,7 +127,7 @@ int main() {
 
 	// Update positions based on the gradient
 
-	int N_steps = 1000; // number of times the cells move up the gradient
+	int N_steps = 300; // number of times the cells move up the gradient
 	
 
 	// choose a set of random number between 0 and 2pi
@@ -137,7 +137,7 @@ int main() {
 
 		for (int i = 0; i<N_steps*particles.size();i++){
 			random_angle(i) = uniformpi(gen1);		
-			cout << "angle to move " << random_angle(i) << endl;
+			//cout << "angle to move " << random_angle(i) << endl;
 		}
 
 	int rand_num_count =0;
@@ -184,12 +184,12 @@ for (int j=0; j<N_steps;j++){
 		// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
 			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
-				cout << "x coord " << x[0] << endl;
-				cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
-				cout << "y coord " << x[1] << endl;
-				cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
-				cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-				cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
+				//cout << "x coord " << x[0] << endl;
+				//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
+				//cout << "y coord " << x[1] << endl;
+				//cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
+				//cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+				//cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
 				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
 
 	// check if there are no cells around the position where I want to move
@@ -200,34 +200,19 @@ for (int j=0; j<N_steps;j++){
                  */
 		x += vdouble2(sin(random_angle(rand_num_count)),cos(random_angle(rand_num_count)));
 
-		cout << "Position "<< x << endl;
+		//cout << "Position "<< x << endl;
 		int count_position = 0;
 		bool free_position = true; // check if the neighbouring position is free
 
+		// if this loop is entered, it means taht there is another cell where I want to move 
                 for (auto tpl: euclidean_search(particles.get_query(),x,diameter)) {
 
-                    /*
-                     * tpl variable is a tuple containing:
-                     *  (0) -> neighbouring particle value_type
-                     *  (1) -> relative position of neighbouring particle
-                     *         from query point
-                     *  e.g.
-                     *
-                     *  const vdouble2& dx = std::get<1>(tpl);
-                     *  const typename container_type::value_type& j = std::get<0>(tpl);
-                     */
+			count_position += 1; // just to check if this works
 
-			count_position +=1;
-
-		    /*const vdouble2& dx = get<1>(tpl);
-                    const particles_type::value_type& j = get<0>(tpl);
-                    if (dx.norm() < diameter) {
-                        free_position = false;
-                        break;*/
-                    free_position = false;
+                    free_position = true;
                     //break;
                 }
-		cout << "print position " << count_position << endl;
+		//cout << "print position " << count_position << endl;
 		if (free_position == true){
 			get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 		}
@@ -237,10 +222,20 @@ for (int j=0; j<N_steps;j++){
 			rand_num_count += 1; // update random number count			
 	}
 	//particles.update_positions();
+		// save particles after they move
+			    /*
+		     * on every i/o step write particle container to a vtk
+		     * unstructured grid file
+		     */
+		    std::cout << "." << std::flush;
+	#ifdef HAVE_VTK
+	vtkWriteGrid("particles",j,particles.get_grid(true));
+    
+	#endif
 
+	//for (int i =0;i<5;++i){cout << "koks rezas " << i <<endl;}
+	
 }
 
-	// save particles after they move
-	vtkWriteGrid("fixed",0,particles.get_grid(true)); 
 
 }
