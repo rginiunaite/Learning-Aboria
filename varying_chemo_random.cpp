@@ -58,10 +58,10 @@ int main() {
 	 */
 
 	// parameters
-	double D = 0.1; // to 10^5 \nu m^2/h diffusion coefficient
+	double D = 1; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
 	double dt = 0.1; // time step, redundant
-	int t_final = 10; // final time	
+	int t_final = 200; // final time	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001; // to 1 /h production rate of chemoattractant
@@ -91,7 +91,7 @@ int main() {
 	 * initial cells	
 	 */
 
-	const size_t N = 8;
+	const size_t N = 5;
 	//ABORIA_VARIABLE(velocity,vdouble2,"velocity")
 	typedef Particles<std::tuple<>, 2> particle_type;
 	//typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
@@ -129,7 +129,7 @@ int main() {
 
 		for (int i = 0; i<N_steps*particles.size();i++){
 			random_angle(i) = uniformpi(gen1);		
-			cout << "angle to move " << random_angle(i) << endl;
+			//cout << "angle to move " << random_angle(i) << endl;
 		}
 
 	int rand_num_count =0;
@@ -146,7 +146,7 @@ int main() {
 					vdouble2 x;
 					x = get<position>(particles[k]);
 					intern(i,j) = intern(i,j) + exp(- (domain_len_tem*domain_len_tem*(i-x[0]*mesh_per_domain)*(i-x[0]*mesh_per_domain)+(j-x[1]*mesh_per_domain)*(j-x[1]*mesh_per_domain))/(2*R*R));
-					cout << "internalisation rate " << intern(i,j) << endl;
+					//cout << "internalisation rate " << intern(i,j) << endl;
 				}			
 			}
     		}		
@@ -221,12 +221,12 @@ int main() {
 
 
 			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_size),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*cell_size))){
-				cout << "x coord " << x[0] << endl;
-				cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
-				cout << "y coord " << x[1] << endl;
-				cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
-				cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-				cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
+				//cout << "x coord " << x[0] << endl;
+				//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_size << endl;
+				//cout << "y coord " << x[1] << endl;
+				//cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_size << endl;	
+				//cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+				//cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_size),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_size))<< endl;	
 				//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_size, cos(random_angle(rand_num_count))+sign_y*cell_size);
 
 		x += vdouble2(sin(random_angle(rand_num_count)),cos(random_angle(rand_num_count)));
@@ -240,7 +240,7 @@ int main() {
 
 			count_position += 1; // just to check if this works
 
-                    free_position = false;
+                    free_position = true;
                     //break;
                 }
 		//cout << "print position " << count_position << endl;
@@ -253,13 +253,55 @@ int main() {
 			
 		}
 		
+	
 
+	if (t%10==0){
+		// save particles after they move
+ 		vtkWriteGrid("after_10mod",t,particles.get_grid(true));
+
+		/// save matrix in 4 columns, for wach time step
+
+		MatrixXf chemo_3col(length_x*length_y,4);
+
+		// x, y coord, 1st and 2nd columns respectively
+		int k = 0;
+	
+		
+		while (k<length_x*length_y){
+			for (int i = 0;i<length_x;i++){
+				for (int j = 0; j< length_y; j++){
+					chemo_3col(k,0) = i; 
+					chemo_3col(k,1) = j;
+					chemo_3col(k,2) = 0;
+					k += 1;
+				}			
+			}
+		}
+
+		// z column
+		for (int i=0;i<length_x*length_y;i++){
+			chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
+		
+		}
+
+		// save data to plot chemoattractant concentration in MATLAB
+		ofstream output("matrix_3colmod10" + to_string(t) +".csv");
+	
+			output << "x, y, z, u" << "\n" << endl;
+
+
+		for (int i=0;i<length_x*length_y;i++){
+			for(int j=0;j<4;j++){
+				output << chemo_3col(i,j) << ", ";
+			}
+			output << "\n" << endl;
+		}	
+	}// end if tmod10=0
 
 	}// end of for loop with t<t_final
 
 	
-// save particles after they move
- vtkWriteGrid("after",0,particles.get_grid(true));
+
 
 // save data for final chemoattractant concentration
 /* ofstream output("final_chemo.txt");
@@ -271,43 +313,7 @@ int main() {
 		output << "\n" << std::endl; 
     	} */	
 
-/// save matrix in 4 columns
 
-	MatrixXf chemo_3col(length_x*length_y,4);
-
-	// x, y coord, 1st and 2nd columns respectively
-	int k = 0;
-	
-		
-	while (k<length_x*length_y){
-		for (int i = 0;i<length_x;i++){
-			for (int j = 0; j< length_y; j++){
-				chemo_3col(k,0) = i; 
-				chemo_3col(k,1) = j;
-				chemo_3col(k,2) = 0;
-				k += 1;
-			}			
-		}
-	}
-
-	// z column
-	for (int i=0;i<length_x*length_y;i++){
-		chemo_3col(i,3) = chemo(chemo_3col(i,0),chemo_3col(i,1));
-		
-	}
-
-	// save data to plot chemoattractant concentration in MATLAB
-	ofstream output("matrix_3col.csv");
-	
-		output << "x, y, z, u" << "\n" << endl;
-
-
-	for (int i=0;i<length_x*length_y;i++){
-		for(int j=0;j<4;j++){
-			output << chemo_3col(i,j) << ", ";
-		}
-		output << "\n" << endl;
-	}	
 
 
 
