@@ -18,21 +18,21 @@ int main() {
 
 	// model parameters
 
-	int length_x = 40;//40;//4; // length of the chemoattractant vector
+	int length_x = 30;//40;//4; // length of the chemoattractant vector
 	const int length_y = 12;//20;//4;
 	int new_length_x = length_x;
-	const double diameter = 2*7.5; // diameter in which there have to be no cells, equivalent to size of the cell
-	double cell_radius = 7.5; // cell size relative to mesh
-	int N_steps = 10; // number of times the cells move up the gradient
-	const size_t N = 1; // number of cells
-	double l_filo = 27.5; // sending radius
+	const double diameter = (2*7.5)/20; // diameter in which there have to be no cells, equivalent to size of the cell
+	double cell_radius =  (7.5)/10; // cell size relative to mesh
+	int N_steps = 50; // number of times the cells move up the gradient
+	const size_t N = 5; // number of cells
+	double l_filo = 27.5/10; // sending radius
 
 	// domain growth parameters
 
 	double L_0 = 20;//300;
 	double a = 0.08;
 	double t_s = -16;
- 	int L_inf = 80;//100;//16;//870;
+ 	int L_inf = 110;//100;//16;//870;
 
 
 
@@ -124,7 +124,7 @@ int main() {
 	    		get<position>(p) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
 			free_position = true;
 		        /*
-		         * loop over all neighbouring particles within "diameter" distance
+		         * loop over all neighbouring particles within "diameter=2*radius" distance
 		         */
 		        for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),diameter)) {
 		            /*
@@ -149,7 +149,7 @@ int main() {
 
 
 
-	for (int t = 0 ;t <N_steps; t++){
+	for (int t = 0 ;t < N_steps; t++){
 	
 		// insert new cells at the start of the domain at insertion time
 
@@ -185,8 +185,9 @@ int main() {
 
 		//new_length_x = int( L_0 * ( (L_inf * exp(a*(t-t_s)*L_inf))/ (L_inf -1 + exp(a*(t-t_s)*L_inf)) +1 - (L_inf*exp(a*(-t_s)*L_inf))/(L_inf-1+exp(a*(-t_s)*L_inf))));
 
-		new_length_x = int( length_x+1);//+2);
-
+		if (t % 10 == 0){
+			new_length_x = int( length_x+1);
+		}
 	
 		MatrixXf chemo(L_inf, length_y);	
 	
@@ -210,7 +211,7 @@ int main() {
 	
 			// form a matrix which would store x,y,z
 
-			 MatrixXf chemo_3col(L_inf*length_y,4); // need for because that is how paraview accepts data, third dimension is just zeros
+		MatrixXf chemo_3col(L_inf*length_y,4); // need for because that is how paraview accepts data, third dimension is just zeros
 
 			// x, y coord, 1st and 2nd columns respectively
 			int k = 0;
@@ -272,7 +273,7 @@ int main() {
 				//cout << "angle to move " << random_angle(i) << endl;
 			}
 
-		int rand_num_count =0;
+		int rand_num_count = 0;
 
 	//for (int j=0; j<N_steps;j++){
 		for (int i=0; i < particles.size(); i++){
@@ -329,7 +330,7 @@ int main() {
 
 		        /*
 		         * loop over all neighbouring particles within a euclidean distance
-		         * of size "diameter"
+		         * of size "diameter" after it moved
 		         */
 			x += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 			//cout << "print id " << id_[x] << endl;
@@ -347,7 +348,7 @@ int main() {
 	    			const vdouble2& dx = std::get<1>(k);
 	   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
 
-				if (get<id>(b) != get<id>(particles[i])){
+				if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
 					cout << "reject step " << 1 << endl;
 		            		free_position = false;}
 		            //break;
@@ -356,7 +357,7 @@ int main() {
 
 			//cout << "print position " << count_position << endl;
 			if (free_position == true){
-				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
 			}
 
 				}// update the position
