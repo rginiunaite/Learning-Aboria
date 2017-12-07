@@ -19,12 +19,12 @@ int main() {
 	// model parameters
 
 	int length_x = 30;//40;//4; // length of the chemoattractant vector
-	const int length_y = 12;//20;//4;
+	const int length_y = 20;//20;//4;
 	int new_length_x = length_x;
-	const double diameter = (2*7.5)/20; // diameter in which there have to be no cells, equivalent to size of the cell
+	const double diameter = (2*7.5)/10; // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius =  (7.5)/10; // cell size relative to mesh
 	int N_steps = 50; // number of times the cells move up the gradient
-	const size_t N = 5; // number of cells
+	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10; // sending radius
 
 	// domain growth parameters
@@ -148,12 +148,23 @@ int main() {
 	vtkWriteGrid("before",0,particles.get_grid(true));
 
 
+		// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
+			std::default_random_engine gen1;
+			std::uniform_real_distribution<double> uniformpi(0,M_PI); // can only move forward
+			VectorXf random_angle(N_steps*particles.size());  
+
+			for (int i = 0; i<N_steps*particles.size();i++){
+				random_angle(i) = uniformpi(gen1);		
+				//cout << "angle to move " << random_angle(i) << endl;
+			}
+
+		int rand_num_count = 0;
 
 	for (int t = 0 ;t < N_steps; t++){
 	
 		// insert new cells at the start of the domain at insertion time
 
-		if (t % 10 == 0 ){
+		 if (t % 10 == 0 ){
 			bool free_position = false;
 			particle_type::value_type p;
 			get<radius>(p) = cell_radius;
@@ -179,15 +190,15 @@ int main() {
 				}
 			if (free_position == true){
 			particles.push_back(p);}
-		}
+		} 
 	/////////////////////////////////////	
 		// grow domain 
 
 		//new_length_x = int( L_0 * ( (L_inf * exp(a*(t-t_s)*L_inf))/ (L_inf -1 + exp(a*(t-t_s)*L_inf)) +1 - (L_inf*exp(a*(-t_s)*L_inf))/(L_inf-1+exp(a*(-t_s)*L_inf))));
 
-		if (t % 10 == 0){
+		//if (t % 5 == 0){
 			new_length_x = int( length_x+1);
-		}
+		//}
 	
 		MatrixXf chemo(L_inf, length_y);	
 	
@@ -263,17 +274,8 @@ int main() {
 		// Update positions based on the gradient
 
 
-		// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
-			std::default_random_engine gen1;
-			std::uniform_real_distribution<double> uniformpi(0,M_PI); // can only move forward
-			VectorXf random_angle(N_steps*particles.size());  
 
-			for (int i = 0; i<N_steps*particles.size();i++){
-				random_angle(i) = uniformpi(gen1);		
-				//cout << "angle to move " << random_angle(i) << endl;
-			}
 
-		int rand_num_count = 0;
 
 	//for (int j=0; j<N_steps;j++){
 		for (int i=0; i < particles.size(); i++){
