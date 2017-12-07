@@ -8,6 +8,7 @@
 #include <iostream>// writing on a text file
 #include <fstream>
 #include <math.h>
+#include <assert.h>
 
 using namespace std;
 using namespace Aboria;
@@ -151,9 +152,12 @@ int main() {
 		// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
 			std::default_random_engine gen1;
 			std::uniform_real_distribution<double> uniformpi(0,M_PI); // can only move forward
-			VectorXf random_angle(N_steps*particles.size());  
+			VectorXf random_angle(N_steps*particles.size()*particles.size()*N_steps);  
 
-			for (int i = 0; i<N_steps*particles.size();i++){
+
+
+			// make sure I have enough because more particles will appear
+			for (int i = 0; i<N_steps*particles.size()*particles.size()*N_steps;i++){
 				random_angle(i) = uniformpi(gen1);		
 				//cout << "angle to move " << random_angle(i) << endl;
 			}
@@ -162,9 +166,9 @@ int main() {
 
 	for (int t = 0 ;t < N_steps; t++){
 	
-		// insert new cells at the start of the domain at insertion time
+		// insert new cells at the start of the domain at insertion time (have to think about this insertion time)
 
-		 if (t % 10 == 0 ){
+		 if (t % 5 == 0 ){
 			bool free_position = false;
 			particle_type::value_type p;
 			get<radius>(p) = cell_radius;
@@ -191,6 +195,8 @@ int main() {
 			if (free_position == true){
 			particles.push_back(p);}
 		} 
+
+
 	/////////////////////////////////////	
 		// grow domain 
 
@@ -257,7 +263,7 @@ int main() {
 			}
 	
 
-	/// update position based on the domain growth
+	/// update positions uniformly based on the domain growth
 		int diff_domain = new_length_x - length_x;
 		double update = (double(diff_domain)/double(length_x));
 
@@ -302,6 +308,8 @@ int main() {
 			if(cos(random_angle(rand_num_count))<0){
 				sign_y=-1;
 			}else{sign_y=1;}
+
+			
 			
 			//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
 			//cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;
@@ -312,6 +320,9 @@ int main() {
 			//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_radius) << endl;
 			//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_radius) << endl;
 
+			
+
+		// make sure that the 
 			if (round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo)>-1 && round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo)<new_length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 
 			//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
@@ -319,7 +330,20 @@ int main() {
 
 			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
+ 			
+			cout << "problem here with the coord if before 57" << endl;
+
+			cout << "x coord " << round(x[0]) << endl;
+			cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
+			cout << "y coord " << round(x)[1] << endl;
+			cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
+
+
+
+
 			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo))){
+
+			cout << "can enter" << endl;
 					//cout << "x coord " << x[0] << endl;
 					//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_radius << endl;
 					//cout << "y coord " << x[1] << endl;
@@ -356,7 +380,7 @@ int main() {
 		            //break;
 		        }
 
-
+		
 			//cout << "print position " << count_position << endl;
 			if (free_position == true){
 				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
@@ -364,6 +388,7 @@ int main() {
 
 				}// update the position
 			} //check if not outside the domain
+		
 				rand_num_count += 1; // update random number count			
 		}// go through all the particles
 		//particles.update_positions();
