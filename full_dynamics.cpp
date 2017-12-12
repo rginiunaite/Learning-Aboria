@@ -19,40 +19,39 @@ int main() {
 
 	// model parameters
 
-	int length_x = 240;//40;//4; // length of the chemoattractant vector, for fixed domain
-	int length_x_change = 240;
+	int length_x = 24;//240;//40;//4; // length of the chemoattractant vector, for fixed domain
+	int length_x_change = 24;//240;
 	int new_length_x_change = length_x_change;
-	const int length_y = 120;//20;//4;
-	const double diameter = 2;//(2*7.5)/10; // diameter in which there have to be no cells, equivalent to size of the cell
-	double cell_radius = 0.5;//(7.5)/10; // cell size relative to mesh
-	int N_steps = 50; // number of times the cells move up the gradient
+	const int length_y = 12;//120;//20;//4;
+	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
+	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
+	int N_steps = 100; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
-	double l_filo = 2;//27.5/10; // sending radius
+	double l_filo = 27.5/10;//2; // sending radius
 
 	// domain growth parameters
 
 	double L_0 = 20;//300;
 	double a = 0.08;
 	double t_s = -16;
- 	int L_inf = 1100;//110;//100;//16;//870;
+ 	int L_inf = 150;//1100;//100;//16;//870;
 
 
 	// parameters for the dynamics of chemoattractant concentration
 
 
-	double D = 1; // to 10^5 \nu m^2/h diffusion coefficient
+	double D = 1/10; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
-	double dt = 0.1; // time step, redundant
-	int t_final = 200; // final time	
+	double dt = 0.1/10; // time step, redundant	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
-	double kai = 0.0001; // to 1 /h production rate of chemoattractant
+	double kai = 0.0001/10; // to 1 /h production rate of chemoattractant
 	
 
 	// parameters for internalisation
 
-	double R = 7.5; // \nu m cell radius
-	int lam = 100;//(100)/10; // to 1000 /h chemoattractant internalisation
+	double R = 7.5/10; // \nu m cell radius
+	int lam = 100/10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
 
 	MatrixXf chemo_change_len(L_inf,length_y),chemo(length_x, length_y), chemo_new(length_x,length_y);	
@@ -132,7 +131,7 @@ int main() {
 	typedef particle_type::position position;
 	particle_type particles;
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(1,length_y);
+	std::uniform_real_distribution<double> uniform(2,length_y-1);
 
 	/*
          * initialise neighbour search with 2d cuboid domain,
