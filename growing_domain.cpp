@@ -108,7 +108,7 @@ int main() {
 	typedef particle_type::position position;
 	particle_type particles;
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(1,length_y);
+	std::uniform_real_distribution<double> uniform(2,length_y-1);
 
 	/*
          * initialise neighbour search with 2d cuboid domain,
