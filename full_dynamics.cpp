@@ -25,16 +25,17 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 100; // number of times the cells move up the gradient
+	int N_steps = 50; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sending radius
+	double diff_conc = 0.1; // how much concentration has to be bigger, so that the cell moves
 
 	// domain growth parameters
 
 	double L_0 = 20;//300;
 	double a = 0.08;
 	double t_s = -16;
- 	int L_inf = 150;//1100;//100;//16;//870;
+ 	int L_inf = 110;//1100;//100;//16;//870;
 
 
 	// parameters for the dynamics of chemoattractant concentration
@@ -225,16 +226,21 @@ int main() {
 
 		//new_length_x = int( L_0 * ( (L_inf * exp(a*(t-t_s)*L_inf))/ (L_inf -1 + exp(a*(t-t_s)*L_inf)) +1 - (L_inf*exp(a*(-t_s)*L_inf))/(L_inf-1+exp(a*(-t_s)*L_inf))));
 
+		int diff_domain_rescale = 1; // initial difference in domain length
+		int diff_domain =0;
+		int diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
+		int domain_len_der = 1; // for now assume linear growth
+
+
 		//if (t % 5 == 0){
+			cout << "are you never in " << endl;
 			new_length_x_change = int( length_x_change+1);
 
-		int domain_len_der = 1; // for now assume linear growth
+			diff_domain = new_length_x_change - length_x;
+			diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
+			cout << "diff domain " << diff_domain << endl;
 		//}
-
-
-		int diff_domain = new_length_x_change - length_x_change;
-
-
+			cout << "diff domain outside " << diff_domain << endl;
 
 		// update chemoattractant profile 
 
@@ -245,14 +251,14 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- (diff_domain*diff_domain*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- (diff_domain_rescale*diff_domain_rescale*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
 				}			
 			}
     		}	
 
 		for (int i=1;i<length_x-1;i++){
 				for (int j=1;j<length_y-1;j++){
-					chemo_new(i,j) = dt * (D*((1/(diff_domain*diff_domain))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(length_x) *chemo(i,j) ) + chemo(i,j);
+					chemo_new(i,j) = dt * (D*((1/(diff_domain_rescale*diff_domain_rescale))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(length_x) *chemo(i,j) ) + chemo(i,j);
 				}
 				//cout << "print the internalisation term " << intern(i,j) << endl;
 				//cout << "new chemo " << chemo_new(i,j) << endl;
@@ -262,59 +268,69 @@ int main() {
 		
 
 	
-		//MatrixXf chemo_change_new (L_inf, length_y);// mostt likely there is no need to have it here again
+		//MatrixXf chemo_change_new (L_inf, length_y);// most likely there is no need to have it here again
 
 		/*
  		now map again to the bigger matrix which will be used for plotting
 		*/
 
 		// choose diff_domain random numbers from 2 to length_x, to account for positions where extra entry will be added
-	cout << "stops, this is diff_domain " << diff_domain << endl;
-	std::default_random_engine gen2;
-	std::uniform_real_distribution<double> uniformpi(2,length_x); // can only move forward
-	VectorXf random_num(diff_domain);  //vector to store random 
+	//cout << "stops, this is diff_domain " << diff_domain << endl;
+	
+		std::default_random_engine gen2;
+		std::uniform_real_distribution<double> uniformpi(2,length_x); // can only move forward
+		VectorXf random_num(diff_domain);  //vector to store random 
 
-	for (int i = 0; i<diff_domain;i++){
-		random_num(i) = int(uniformpi(gen2));		
+		for (int i = 0; i<diff_domain;i++){
+			random_num(i) = int(uniformpi(gen2));		
 
-	}
-	cout << "random number " << random_num(0) << endl;
-	cout << "new length " << new_length_x_change << endl;
-
-	// first and last elements do not change
-	for (int j=0; j<length_y;j++){
-		chemo_change_len(0,j) = chemo(0,j);
-		chemo_change_len(new_length_x_change-1,j) = chemo(length_x-1,j);
-	}
-	cout << "can't reach here " << endl;
-	// update the interior of chemo_change_len
-
-	int count_new = 1;
-
-	for(int i=1; i<length_x; i++){
-		bool extension = false; // keep track if the inside for loop below was executed
-	cout << "count_new " << count_new << endl;
-		for (int j =0;j<diff_domain;j++){
-			if (i == random_num(j)){
-				for (int k = 0;k<length_y;k++){
-					chemo_change_len(count_new,k) = (chemo(i-1,k)+chemo(i,k))*0.5;
-				}
-				count_new +=1;
-				for (int k = 0;k<length_y;k++){
-					chemo_change_len(count_new,k) = (chemo(i,k)+chemo(i+1,k))*0.5;
-				}
-				count_new +=1;	
-				extension = true;			
-			}
 		}
-		if (extension == false){
-			for (int k = 0;k<length_y;k++){
-				chemo_change_len(count_new,k) = chemo(i,k);
-			}
-			count_new +=1;
+
+		cout << "size of random numbers " << random_num.size() << endl;
+		//sort in ascending order
+		sort(random_num.data(), random_num.data() + random_num.size());
+		for (int i = 0; i< random_num.size();i++){
+			cout << "random number entries: " << random_num(i) <<endl; 
 		}
-	}
+
+		//cout << "random number " << random_num(0) << endl;
+		//cout << "new length " << new_length_x_change << endl;
+
+		// first and last elements do not change
+		for (int j=0; j<length_y;j++){
+			chemo_change_len(0,j) = chemo(0,j);
+			chemo_change_len(new_length_x_change-1,j) = chemo(length_x-1,j);
+		}
+		//cout << "can't reach here " << endl;
+		// update the interior of chemo_change_len
+
+		int count_new = 1;
+
+		for(int i=1; i<length_x-1; i++){
+			bool extension = false; // keep track if the inside for loop below was executed
+		//cout << "count_new " << count_new << endl;
+			for (int j =0;j<diff_domain;j++){
+				if (i == random_num(j)){
+					for (int k = 0;k<length_y;k++){
+						chemo_change_len(count_new,k) = (chemo(i,k)+chemo(i,k))*0.5;
+					}
+					count_new += 1;
+					for (int k = 0;k<length_y;k++){
+						chemo_change_len(count_new,k) = (chemo(i,k)+chemo(i,k))*0.5;
+					}
+					count_new += 1;	
+					extension = true;			
+				}
+			}
+			if (extension == false){
+				for (int k = 0;k<length_y;k++){
+					chemo_change_len(count_new,k) = chemo(i,k);
+				}
+				count_new += 1;
+			}
 		
+		}//cout << "number of filled position for changing chemo matrix " << count_new << endl;
+	
 
 			// three columns for x, y, z
 	
@@ -356,7 +372,7 @@ int main() {
 	
 
 	/// update positions uniformly based on the domain growth
-		double update = (double(diff_domain)/double(length_x));
+		double update = (double(diff_domain_update)/double(length_x));
 
 		for (int i = 0; i< particles.size();i++){
 			get<position>(particles)[i] += vdouble2(update, 0);
@@ -422,19 +438,20 @@ int main() {
 			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
  			
-			cout << "problem here with the coord if before 57" << endl;
+			//cout << "problem here with the coord if before 57" << endl;
 
-			cout << "x coord " << round(x[0]) << endl;
-			cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
-			cout << "y coord " << round(x)[1] << endl;
-			cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
-
-
+			//cout << "x coord " << round(x[0]) << endl;
+			//cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
+			//cout << "y coord " << round(x)[1] << endl;
+			//cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
 
 
-			if (chemo_change_len(round(x)[0],round(x)[1]) < chemo_change_len(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo))){
 
-			cout << "can enter" << endl;
+		// need that + diff_conc to make sure that the concentration is sufficiently bigger
+			if (chemo_change_len(round(x)[0],round(x)[1])+diff_conc < chemo_change_len(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo))){
+			//cout << "compare, first one " << chemo_change_len(round(x)[0],round(x)[1]) << endl;
+			//cout << "second one, should be bigger " << chemo_change_len(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)) << endl;
+			//cout << "can enter" << endl;
 					//cout << "x coord " << x[0] << endl;
 					//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_radius << endl;
 					//cout << "y coord " << x[1] << endl;
@@ -466,7 +483,7 @@ int main() {
 	   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
 
 				if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
-					cout << "reject step " << 1 << endl;
+					//cout << "reject step " << 1 << endl;
 		            		free_position = false;}
 		            //break;
 		        }
@@ -478,6 +495,7 @@ int main() {
 			}
 
 				}// update the position
+				//else{cout << "rejected" << endl;}
 			} //check if not outside the domain
 		
 				rand_num_count += 1; // update random number count			
@@ -489,14 +507,14 @@ int main() {
 			     * on every i/o step write particle container to a vtk
 			     * unstructured grid file
 			     */
-			    cout << "." << flush;
+			    //cout << "." << flush;
 		#ifdef HAVE_VTK
 		vtkWriteGrid("particles",t,particles.get_grid(true));    
 		#endif
 
 		//for (int i =0;i<5;++i){cout << "koks rezas " << i <<endl;}
 		length_x_change = new_length_x_change;
-		cout << "new length " << new_length_x_change << endl;
+		//cout << "new length " << new_length_x_change << endl;
 	}//all time steps
 
 for (int i=0; i < particles.size(); i++) {
