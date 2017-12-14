@@ -25,10 +25,11 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 50; // number of times the cells move up the gradient
+	int N_steps = 100; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sending radius
 	double diff_conc = 0.1; // how much concentration has to be bigger, so that the cell moves
+	int freq_growth = 100; // domain grows linear every freq_growth time step
 
 	// domain growth parameters
 
@@ -43,7 +44,7 @@ int main() {
 
 	double D = 1/10; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
-	double dt = 0.1/10; // time step, redundant	
+	double dt = 0.1/10; // time step	
 	int dx = 1; // space step in x direction
 	int dy = 1; // space step in y direction
 	double kai = 0.0001/10; // to 1 /h production rate of chemoattractant
@@ -188,6 +189,13 @@ int main() {
 
 	int rand_num_count = 0;
 
+	int diff_domain_rescale = 1; // initial difference in domain length
+	int diff_domain = 0;
+	int diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
+	int domain_len_der = 0; // for now assume linear growth
+	double update = 0;
+
+
 	for (int t = 0; t < N_steps; t++){
 	
 	// insert new cells at the start of the domain at insertion time (have to think about this insertion time)
@@ -226,20 +234,20 @@ int main() {
 
 		//new_length_x = int( L_0 * ( (L_inf * exp(a*(t-t_s)*L_inf))/ (L_inf -1 + exp(a*(t-t_s)*L_inf)) +1 - (L_inf*exp(a*(-t_s)*L_inf))/(L_inf-1+exp(a*(-t_s)*L_inf))));
 
-		int diff_domain_rescale = 1; // initial difference in domain length
-		int diff_domain =0;
-		int diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
-		int domain_len_der = 1; // for now assume linear growth
+		domain_len_der =0;
 
-
-		//if (t % 5 == 0){
+		if (t % freq_growth == 0){
 			cout << "are you never in " << endl;
 			new_length_x_change = int( length_x_change+1);
 
 			diff_domain = new_length_x_change - length_x;
 			diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
+			
+			update = (double(diff_domain_update)/double(length_x));
+			cout << "update "<< update << endl;
 			cout << "diff domain " << diff_domain << endl;
-		//}
+			domain_len_der = 1;
+		}
 			cout << "diff domain outside " << diff_domain << endl;
 
 		// update chemoattractant profile 
@@ -251,14 +259,15 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					intern(i,j) = intern(i,j) + exp(- (diff_domain_rescale*diff_domain_rescale*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(-((i-x[0]-update)*(i-x[0]-update)+(j-x[1])*(j-x[1]))/(2*R*R));
+					//intern(i,j) = intern(i,j) + exp(- (diff_domain*diff_domain*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
 				}			
 			}
     		}	
 
 		for (int i=1;i<length_x-1;i++){
 				for (int j=1;j<length_y-1;j++){
-					chemo_new(i,j) = dt * (D*((1/(diff_domain_rescale*diff_domain_rescale))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(length_x) *chemo(i,j) ) + chemo(i,j);
+					chemo_new(i,j) = dt * (D*((1/((diff_domain)*(diff_domain )))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(diff_domain) *chemo(i,j) ) + chemo(i,j);
 				}
 				//cout << "print the internalisation term " << intern(i,j) << endl;
 				//cout << "new chemo " << chemo_new(i,j) << endl;
@@ -278,7 +287,7 @@ int main() {
 	//cout << "stops, this is diff_domain " << diff_domain << endl;
 	
 		std::default_random_engine gen2;
-		std::uniform_real_distribution<double> uniformpi(2,length_x); // can only move forward
+		std::uniform_real_distribution<double> uniformpi(2,length_x-1); // random position in x
 		VectorXf random_num(diff_domain);  //vector to store random 
 
 		for (int i = 0; i<diff_domain;i++){
@@ -312,11 +321,11 @@ int main() {
 			for (int j =0;j<diff_domain;j++){
 				if (i == random_num(j)){
 					for (int k = 0;k<length_y;k++){
-						chemo_change_len(count_new,k) = (chemo(i,k)+chemo(i,k))*0.5;
+						chemo_change_len(count_new,k) = (chemo(i-1,k)+chemo(i,k))*0.5;
 					}
 					count_new += 1;
 					for (int k = 0;k<length_y;k++){
-						chemo_change_len(count_new,k) = (chemo(i,k)+chemo(i,k))*0.5;
+						chemo_change_len(count_new,k) = (chemo(i-1,k)+chemo(i,k))*0.5;
 					}
 					count_new += 1;	
 					extension = true;			
@@ -329,7 +338,7 @@ int main() {
 				count_new += 1;
 			}
 		
-		}//cout << "number of filled position for changing chemo matrix " << count_new << endl;
+		}cout << "number of filled position for changing chemo matrix " << count_new << endl;
 	
 
 			// three columns for x, y, z
@@ -371,11 +380,14 @@ int main() {
 			}
 	
 
-	/// update positions uniformly based on the domain growth
-		double update = (double(diff_domain_update)/double(length_x));
 
-		for (int i = 0; i< particles.size();i++){
+	/// update positions uniformly based on the domain growth
+
+		if (t % freq_growth == 0){
+			
+			for (int i = 0; i< particles.size();i++){
 			get<position>(particles)[i] += vdouble2(update, 0);
+			}
 		}
 
 		
