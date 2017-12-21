@@ -29,11 +29,11 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 100; // number of times the cells move up the gradient
+	int N_steps = 150; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
-	double diff_conc = 0.1; // how much concentration has to be bigger, so that the cell moves
-	int freq_growth = 5; // domain grows linear every freq_growth time step
+	double diff_conc = 0.05; // how much concentration has to be bigger, so that the cell moves
+	int freq_growth = 10; // domain grows linear every freq_growth time step
 
 	// domain growth parameters
 
@@ -151,7 +151,7 @@ int main() {
          * periodic in x and y
          */
 
-        particles.init_neighbour_search(vdouble2(0,0),vdouble2(length_x,length_y),vbool2(false,false));	
+        particles.init_neighbour_search(vdouble2(0,0), vdouble2(length_x,length_y), vbool2(false,false));	
   
 	for (int i=0; i<N; ++i) {
 		bool free_position = false;
@@ -200,9 +200,7 @@ int main() {
 
 	int rand_num_count = 0;
 
-	int diff_domain_rescale = 1; // initial difference in domain length
-	double diff_domain = 0;
-	int diff_domain_update = diff_domain;//new_length_x_change - length_x_change;
+	
 	int domain_len_der = 0; // for now assume linear growth
 	double update = 0;
 
@@ -271,10 +269,9 @@ int main() {
 			domain_length = domain_length + 1.0;
 			//length_x_change = int( length_x_change+1); // change in the domain length
 
-			diff_domain = domain_length - initial_domain_length;
 			
 			
-			update = (double(diff_domain)/double(domain_length));
+			//update = (double(diff_domain)/double(domain_length));
 			//cout << "update "<< update << endl;
 			//cout << "diff domain " << diff_domain << endl;
 			domain_len_der = 1;
@@ -282,6 +279,9 @@ int main() {
 			//cout << "diff domain outside " << diff_domain << endl;
 
 		// update chemoattractant profile 
+
+
+
 
 		// internalisation
 		for (int i =0;i<length_x;i++){
@@ -291,7 +291,7 @@ int main() {
 					vdouble2 x;
 					x = get<position>(particles[k]);
 					//intern(i,j) = intern(i,j) + exp(-((i-x[0]-update)*(i-x[0]-update)+(j-x[1])*(j-x[1]))/(2*R*R));
-					intern(i,j) = intern(i,j) + exp(- ((domain_length/length_x)*(domain_length/length_x)*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
+					intern(i,j) = intern(i,j) + exp(- (((domain_length/length_x)*i-x[0])*((domain_length/length_x)*i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
 					//intern(i,j) = intern(i,j) + exp(- ((domain_length)*(domain_length)*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
 				}			
 			}
@@ -299,7 +299,7 @@ int main() {
 
 		for (int i=1;i<length_x-1;i++){
 				for (int j=1;j<length_y-1;j++){
-					chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x)))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) *chemo(i,j) ) + chemo(i,j);
+					chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
 					//chemo_new(i,j) = dt * (D*((1/((domain_length)*(domain_length)))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) *chemo(i,j) ) + chemo(i,j);
 				}
 				//cout << "print the internalisation term " << intern(i,j) << endl;
@@ -320,11 +320,13 @@ int main() {
 			// form a matrix which would store x,y,z, y -same as before
 
 
+			cout << "old length " << old_length << endl;
+			cout << "domain length " << domain_length << endl;
 			// x column
 			for (int i=0;i<length_x*length_y;i++){
 				chemo_3col(i,0) = chemo_3col_ind(i,0)*(domain_length/length_x);
 			}
-			cout << "domain length ratio " << domain_length/length_x << endl; 
+			//cout << "domain length ratio " << domain_length/length_x << endl; 
 		
 			// u column
 			for (int i=0;i<length_x*length_y;i++){
@@ -352,7 +354,7 @@ int main() {
 			for (int i = 0; i< particles.size();i++){
 			get<position>(particles)[i] *= vdouble2((domain_length/old_length), 1);
 			}
-			//old_length = domain_length;
+			old_length = domain_length;
 		}
 
 
@@ -364,7 +366,9 @@ int main() {
 
 
 
+	// SEARCH MULTIPLE TIMES 
 
+	
 	//for (int j=0; j<N_steps;j++){
 		for (int i=0; i < particles.size(); i++){
 		
@@ -391,6 +395,20 @@ int main() {
 				sign_y=-1;
 			}else{sign_y=1;}
 
+
+
+			// HAVE TO CHOOSE TWO ANGLES 
+			int sign_x_2, sign_y_2;
+			if(sin(random_angle(rand_num_count+1))<0){
+				sign_x_2=-1;
+			}else{sign_x_2=1;}
+
+			if(cos(random_angle(rand_num_count+1))<0){
+				sign_y_2=-1;
+			}else{sign_y_2=1;}
+
+			
+			
 			
 			
 			//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
@@ -403,8 +421,8 @@ int main() {
 			//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_radius) << endl;
 
 		
-	cout << "domain length " << domain_length << endl;
-	cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
+	//cout << "domain length " << domain_length << endl;
+	//cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
 		// make sure that the 
 			if (round((x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) * (length_x/domain_length))>-1 && round((x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo* (length_x/domain_length)))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 
@@ -482,6 +500,8 @@ int main() {
 				rand_num_count += 1; // update random number count	
 				
 		}// go through all the particles
+
+
 
 		//particles.update_positions();
 			// save particles after they move
