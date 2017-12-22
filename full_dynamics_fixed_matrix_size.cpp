@@ -29,11 +29,11 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 150; // number of times the cells move up the gradient
+	int N_steps = 50; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
-	double diff_conc = 0.05; // how much concentration has to be bigger, so that the cell moves
-	int freq_growth = 10; // domain grows linear every freq_growth time step
+	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
+	int freq_growth = 5; // domain grows linear every freq_growth time step
 
 	// domain growth parameters
 
@@ -423,8 +423,9 @@ int main() {
 		
 	//cout << "domain length " << domain_length << endl;
 	//cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
-		// make sure that the 
-			if (round((x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) * (length_x/domain_length))>-1 && round((x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo* (length_x/domain_length)))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
+		// make sure that the next position is an entry of the matrix
+		// have to multiply by length_x/domain_length to come back to the same matrix size
+			if (round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 
 			//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
 			//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
@@ -434,16 +435,25 @@ int main() {
  			
 			//cout << "problem here with the coord if before 57" << endl;
 
-			cout << "x coord " << round(x[0]) << endl;
-			cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
-			cout << "y coord " << round(x)[1] << endl;
-			cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
+			//cout << "x coord " << round(x[0]) << endl;
+			//cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
+			//cout << "y coord " << round(x)[1] << endl;
+			//cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
 
+
+
+
+			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+			cout << "chemo coonc in other site " << chemo(round(x[0]* (length_x/domain_length) +sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
 
 
 		// need that + diff_conc to make sure that the concentration is sufficiently bigger
 		// map to the fixed domain to check the difference in concentration
-			if (chemo(round(x)[0],round(x)[1])+diff_conc < chemo(round((x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo)* (length_x/domain_length)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))){
+
+
+			if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))){
+
+
 			//cout << "compare, first one " << chemo_change_len(round(x)[0],round(x)[1]) << endl;
 			//cout << "second one, should be bigger " << chemo_change_len(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)) << endl;
 			//cout << "can enter" << endl;
@@ -497,7 +507,7 @@ int main() {
 				//else{cout << "rejected" << endl;}
 			} //check if not outside the domain
 		
-				rand_num_count += 1; // update random number count	
+				rand_num_count += 2; // update random number count	
 				
 		}// go through all the particles
 
