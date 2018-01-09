@@ -29,7 +29,7 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 80; // number of times the cells move up the gradient
+	int N_steps = 10; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
@@ -408,70 +408,91 @@ int main() {
 				sign_y_2=-1;
 			}else{sign_y_2=1;}
 
+
+			int sign_x_3, sign_y_3;
+			if(sin(random_angle(rand_num_count+2))<0){
+				sign_x_3=-1;
+			}else{sign_x_3=1;}
+
+			if(cos(random_angle(rand_num_count+2))<0){
+				sign_y_3=-1;
+			}else{sign_y_3=1;}
+
 			
+
+
+			// make sure that I chose all three angles that are within the domain, if not select a different one
+
 			
-			
-			
-			//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
-			//cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;
+			int case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
+		
+			while (case_counter <3){
+			cout << "enters case counter" << endl;
+			int case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
+
+				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
+					case_counter +=1;
+				}
+
+				cout << "case counter value" << case_counter << endl;
+				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count+1))+sign_y_2*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count+1))+sign_y_2*l_filo)<length_y ){
+					case_counter +=1;
+				}
+				cout << "case counter value" << case_counter << endl;
+				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+2))+sign_x_3*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+2))+sign_x_3*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count+2))+sign_y_3*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count+2))+sign_y_3*l_filo)<length_y ){
+					case_counter +=1;
+				}
+				cout << "case counter value" << case_counter << endl;
+				
+				rand_num_count += 3;
+				
+
+			}
+
+			cout << "after case counter loop" << endl;
+
+			// choose which direction to move
+
+			//if both smaller, move random direction
+			if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+
+			x += vdouble2(sin(random_angle(rand_num_count+2)), cos(random_angle(rand_num_count+2)));
+			//cout << "print id " << id_[x] << endl;
+		
+
+			//cout << "Position "<< x << endl;
+			int count_position = 0;
+			bool free_position = true; // check if the neighbouring position is free
+
+			// if this loop is entered, it means that there is another cell where I want to move 
+				for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+
+				    count_position += 1; // just to check if this works
+					particle_type::const_reference b = std::get<0>(k);
+		    			const vdouble2& dx = std::get<1>(k);
+		   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
+	
+					cout << "id of b " << get<id>(b) << endl;
+					//for (int i=0; i < particles.size(); i++) {
+	   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+						//cout << "reject step " << 1 << endl;
+				    		free_position = false;}
+						//}
+				
+				    //break;
+				}
 
 		
-			// check if the x coordinates are not out of the domain, if they are, ignore that step
-		
-			//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_radius) << endl;
-			//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_radius) << endl;
-
-		
-	//cout << "domain length " << domain_length << endl;
-	//cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
-		// make sure that the next position is an entry of the matrix
-		// have to multiply by length_x/domain_length to come back to the same matrix size
-			if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
-
-			//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
-			//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
-
-			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
-
- 			
-			//cout << "problem here with the coord if before 57" << endl;
-
-			//cout << "x coord " << round(x[0]) << endl;
-			//cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
-			//cout << "y coord " << round(x)[1] << endl;
-			//cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
+			//cout << "print position " << count_position << endl;
+				if (free_position == true){
+					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+2)), cos(random_angle(rand_num_count+2))); // update if nothing is in the next position
+				}
+			}
 
 
+		// if first greater direction greater, second smaller
+		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
 
-
-			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo coonc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
-
-
-		// need that + diff_conc to make sure that the concentration is sufficiently bigger
-		// map to the fixed domain to check the difference in concentration
-
-
-			if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))){
-
-
-			//cout << "compare, first one " << chemo_change_len(round(x)[0],round(x)[1]) << endl;
-			//cout << "second one, should be bigger " << chemo_change_len(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)) << endl;
-			//cout << "can enter" << endl;
-					//cout << "x coord " << x[0] << endl;
-					//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_radius << endl;
-					//cout << "y coord " << x[1] << endl;
-					//cout << "y up " << cos(random_angle(rand_num_count))+sign_y*cell_radius << endl;	
-					//cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-					//cout << "chemo coonc in other site " << chemo(round(x[0] +sin(random_angle(rand_num_count)) +sign_x*cell_radius),round(x[1]+cos(random_angle(rand_num_count))+sign_y*cell_radius))<< endl;	
-					//get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count))+sign_x*cell_radius, cos(random_angle(rand_num_count))+sign_y*cell_radius);
-
-		// check if there are no cells around the position where I want to move
-
-		        /*
-		         * loop over all neighbouring particles within a euclidean distance
-		         * of size "diameter" after it moved
-		         */
 			x += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
 			//cout << "print id " << id_[x] << endl;
 		
@@ -503,12 +524,145 @@ int main() {
 				if (free_position == true){
 					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
 				}
+			}
 
-				}// update the position
-					//else{cout << "rejected" << endl;}
-			} //check if not outside the domain
+		// if first smaller, second bigger
+		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+
+			x += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1)));
+			//cout << "print id " << id_[x] << endl;
 		
-				rand_num_count += 2; // update random number count	
+
+			//cout << "Position "<< x << endl;
+			int count_position = 0;
+			bool free_position = true; // check if the neighbouring position is free
+
+			// if this loop is entered, it means that there is another cell where I want to move 
+				for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+
+				    count_position += 1; // just to check if this works
+					particle_type::const_reference b = std::get<0>(k);
+		    			const vdouble2& dx = std::get<1>(k);
+		   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
+	
+					cout << "id of b " << get<id>(b) << endl;
+					//for (int i=0; i < particles.size(); i++) {
+	   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+						//cout << "reject step " << 1 << endl;
+				    		free_position = false;}
+						//}
+				
+				    //break;
+				}
+
+		
+			//cout << "print position " << count_position << endl;
+				if (free_position == true){
+					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1))); // update if nothing is in the next position
+				}
+			}	
+
+		// if both greater choose the bigger one
+		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+
+
+		// if first is greater than the second
+		if (chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo)) > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+			x += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+			//cout << "print id " << id_[x] << endl;
+		
+
+			//cout << "Position "<< x << endl;
+			int count_position = 0;
+			bool free_position = true; // check if the neighbouring position is free
+
+			// if this loop is entered, it means that there is another cell where I want to move 
+				for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+
+				    count_position += 1; // just to check if this works
+					particle_type::const_reference b = std::get<0>(k);
+		    			const vdouble2& dx = std::get<1>(k);
+		   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
+	
+					cout << "id of b " << get<id>(b) << endl;
+					//for (int i=0; i < particles.size(); i++) {
+	   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+						//cout << "reject step " << 1 << endl;
+				    		free_position = false;}
+						//}
+				
+				    //break;
+				}
+			//cout << "print position " << count_position << endl;
+				if (free_position == true){
+					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
+				}
+			}
+
+		// if second is greater than the first
+		if (chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo)) < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+			x += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1)));
+			//cout << "print id " << id_[x] << endl;
+		
+
+			//cout << "Position "<< x << endl;
+			int count_position = 0;
+			bool free_position = true; // check if the neighbouring position is free
+
+			// if this loop is entered, it means that there is another cell where I want to move 
+				for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+
+				    count_position += 1; // just to check if this works
+					particle_type::const_reference b = std::get<0>(k);
+		    			const vdouble2& dx = std::get<1>(k);
+		   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
+	
+					cout << "id of b " << get<id>(b) << endl;
+					//for (int i=0; i < particles.size(); i++) {
+	   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+						//cout << "reject step " << 1 << endl;
+				    		free_position = false;}
+						//}
+				
+				    //break;
+				}
+
+			//cout << "print position " << count_position << endl;
+				if (free_position == true){
+					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1))); // update if nothing is in the next position
+				}
+			}
+
+		
+
+			}	
+
+
+
+
+
+
+
+
+
+
+
+
+
+			
+			
+			
+			
+			//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
+			//cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;
+
+		
+			// check if the x coordinates are not out of the domain, if they are, ignore that step
+		
+			//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_radius) << endl;
+			//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_radius) << endl;
+		
+				rand_num_count += 3; // update random number count	
 				
 		}// go through all the particles
 
