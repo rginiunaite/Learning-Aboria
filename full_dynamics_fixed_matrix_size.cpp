@@ -22,25 +22,29 @@ int main() {
 	int length_x = 24;//240;//40;//4; // length of the chemoattractant vector, for fixed domain
 	int length_x_change = 24;//240;
 	//int new_length_x_change = length_x_change;
-	double initial_domain_length =24;
+	double initial_domain_length = 24;
 	double domain_length = 24; //this variable is for the actual domain length
 
 	double old_length = 24;
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 50; // number of times the cells move up the gradient
+	int N_steps = 80; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
-	int freq_growth = 5; // domain grows linear every freq_growth time step
+	int freq_growth = 1; // domain grows linear every freq_growth time step
 
 	// domain growth parameters
 
-	double L_0 = 20;//300;
+	/*double L_0 = 20;//300;
 	double a = 0.08;
 	//double t_s = -16;
- 	int L_inf = 110;//1100;//100;//16;//870;
+ 	int L_inf = 110;//1100;//100;//16;//870;*/
+	double L_0 = initial_domain_length;//300;
+	double a = 0.08/10;
+	//double t_s = -16;
+ 	int L_inf = 50;//1100;//100;//16;//870;
 
 
 	// parameters for the dynamics of chemoattractant concentration
@@ -187,7 +191,7 @@ int main() {
 
 	// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
 	std::default_random_engine gen1;
-	std::uniform_real_distribution<double> uniformpi(0,M_PI); // can only move forward
+	std::uniform_real_distribution<double> uniformpi(0,2*M_PI); // can only move forward
 	VectorXf random_angle(N_steps*particles.size()*particles.size()*N_steps);  
 
 
@@ -266,7 +270,8 @@ int main() {
 
 			//new_length_x = int((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 
-			domain_length = domain_length + 1.0;
+			//domain_length = domain_length + 1.0;
+			domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 			//length_x_change = int( length_x_change+1); // change in the domain length
 
 			
@@ -274,7 +279,9 @@ int main() {
 			//update = (double(diff_domain)/double(domain_length));
 			//cout << "update "<< update << endl;
 			//cout << "diff domain " << diff_domain << endl;
-			domain_len_der = 1;
+			domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
+			cout << "derivative " << domain_len_der;
+			//domain_len_der = 1;
 		}
 			//cout << "diff domain outside " << diff_domain << endl;
 
@@ -306,6 +313,23 @@ int main() {
 				//cout << "new chemo " << chemo_new(i,j) << endl;
 			}
 	
+	// zero flux boundary conditions 
+
+
+		for (int i=0;i<length_y;i++){
+			chemo_new(0,i) = chemo_new(1,i);
+			chemo_new(length_x-1,i) = chemo_new(length_x-2,i);
+		
+		}
+
+		for (int i=0;i<length_x;i++){
+			chemo_new(i,0) = chemo_new(i,1);
+			chemo_new(i,length_y-1) = chemo_new(i,length_y-2);
+		
+		}
+
+
+
 		chemo = chemo_new;
 		
 
@@ -425,7 +449,7 @@ int main() {
 	//cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
 		// make sure that the next position is an entry of the matrix
 		// have to multiply by length_x/domain_length to come back to the same matrix size
-			if (round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
+			if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 
 			//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
 			//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
@@ -444,7 +468,7 @@ int main() {
 
 
 			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo coonc in other site " << chemo(round(x[0]* (length_x/domain_length) +sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
+			cout << "chemo coonc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
 
 
 		// need that + diff_conc to make sure that the concentration is sufficiently bigger
@@ -480,31 +504,31 @@ int main() {
 			bool free_position = true; // check if the neighbouring position is free
 
 			// if this loop is entered, it means that there is another cell where I want to move 
-		        for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+				for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
 
-			    count_position += 1; // just to check if this works
-				particle_type::const_reference b = std::get<0>(k);
-	    			const vdouble2& dx = std::get<1>(k);
-	   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
+				    count_position += 1; // just to check if this works
+					particle_type::const_reference b = std::get<0>(k);
+		    			const vdouble2& dx = std::get<1>(k);
+		   			//cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";	
 	
-				cout << "id of b " << get<id>(b) << endl;
-				//for (int i=0; i < particles.size(); i++) {
-   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
-					//cout << "reject step " << 1 << endl;
-		            		free_position = false;}
-					//}
+					cout << "id of b " << get<id>(b) << endl;
+					//for (int i=0; i < particles.size(); i++) {
+	   					if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+						//cout << "reject step " << 1 << endl;
+				    		free_position = false;}
+						//}
 				
-		            //break;
-		        }
+				    //break;
+				}
 
 		
-		//cout << "print position " << count_position << endl;
-			if (free_position == true){
-				get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
-			}
+			//cout << "print position " << count_position << endl;
+				if (free_position == true){
+					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
+				}
 
 				}// update the position
-				//else{cout << "rejected" << endl;}
+					//else{cout << "rejected" << endl;}
 			} //check if not outside the domain
 		
 				rand_num_count += 2; // update random number count	
