@@ -33,12 +33,12 @@ int main() {
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
-	int freq_growth = 5; // domain grows linear every freq_growth time step
+	int freq_growth = 1; // domain grows linear every freq_growth time step
 
 	// domain growth parameters
 
 	double L_0 = initial_domain_length;//300;
-	double a = 0.08;
+	double a = 0.08/10;
 	//double t_s = -16;
  	int L_inf = 50;//1100;//100;//16;//870;
 
@@ -267,7 +267,7 @@ int main() {
 			//new_length_x = int((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 
 			domain_length = domain_length + 1.0;
-			domain_length = int((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
+			domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 			//length_x_change = int( length_x_change+1); // change in the domain length
 
 			
@@ -306,6 +306,23 @@ int main() {
 				//cout << "print the internalisation term " << intern(i,j) << endl;
 				//cout << "new chemo " << chemo_new(i,j) << endl;
 			}
+
+
+	// zero flux boundary conditions 
+
+
+		for (int i=0;i<length_y;i++){
+			chemo_new(0,i) = chemo_new(1,i);
+			chemo_new(length_x-1,i) = chemo_new(length_x-2,i);
+		
+		}
+
+		for (int i=0;i<length_x;i++){
+			chemo_new(i,0) = chemo_new(i,1);
+			chemo_new(i,length_y-1) = chemo_new(i,length_y-2);
+		
+		}
+
 	
 		chemo = chemo_new;
 		
@@ -428,7 +445,7 @@ int main() {
 		
 			while (case_counter <3){
 			cout << "enters case counter" << endl;
-			int case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
+			case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
 
 				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 					case_counter +=1;
@@ -450,6 +467,7 @@ int main() {
 			}
 
 			cout << "after case counter loop" << endl;
+			cout << "case counter " << case_counter << endl;
 
 			// choose which direction to move
 
@@ -639,17 +657,12 @@ int main() {
 
 
 
+		cout << "does not perform any of the movements " << endl;
 
 
 
 
 
-
-
-
-
-
-			
 			
 			
 			
