@@ -33,7 +33,7 @@ int main() {
 	double L_0 = 20;//300;
 	double a = 0.08;
 	double t_s = -16;
- 	int L_inf = 110;//100;//16;//870;
+ 	int L_inf = 140;//100;//16;//870;
 
 
 
@@ -42,7 +42,7 @@ int main() {
 	// generate gradient which linearly increases
 	for (int i = 0;i<length_x;i++){
 		for (int j = 0; j< length_y; j++){
-			chemo(i,j) = i; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
+			chemo(i,j) = i^2; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
 		}			
 	}
 
@@ -108,7 +108,7 @@ int main() {
 	typedef particle_type::position position;
 	particle_type particles;
 	std::default_random_engine gen;
-	std::uniform_real_distribution<double> uniform(1,length_y);
+	std::uniform_real_distribution<double> uniform(2,length_y-1);
 
 	/*
          * initialise neighbour search with 2d cuboid domain,
@@ -211,7 +211,7 @@ int main() {
 			// generate gradient which linearly increases
 			for (int i = 0;i<new_length_x;i++){
 				for (int j = 0; j< length_y; j++){
-					chemo(i,j) = i; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
+					chemo(i,j) = i^2; // this time it increases as down the rows, but this is consistent with the movement defined afterwards, we initial set cells on x=1, varying y
 				}			
 			}
 
@@ -268,7 +268,7 @@ int main() {
 		double update = (double(diff_domain)/double(length_x));
 
 		for (int i = 0; i< particles.size();i++){
-			get<position>(particles)[i] += vdouble2(update, 0);
+			get<position>(particles)[i] += vdouble2(1*update, 0);
 		}
 
 		
@@ -331,19 +331,17 @@ int main() {
 			// check if the gradient in the other position is larger, if yes, move to that position, x changes by sin and y to cos, because of the the chemo is defined. 
 
  			
-			cout << "problem here with the coord if before 57" << endl;
+			//cout << "problem here with the coord if before 57" << endl;
 
-			cout << "x coord " << round(x[0]) << endl;
-			cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
-			cout << "y coord " << round(x)[1] << endl;
-			cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
-
-
+			//cout << "x coord " << round(x[0]) << endl;
+			//cout << "x up " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo) << endl;
+			//cout << "y coord " << round(x)[1] << endl;
+			//cout << "y up " << round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) <<endl;
 
 
 			if (chemo(round(x)[0],round(x)[1]) < chemo(round(x[0]+sin(random_angle(rand_num_count))+sign_x*l_filo),round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo))){
 
-			cout << "can enter" << endl;
+			//cout << "can enter" << endl;
 					//cout << "x coord " << x[0] << endl;
 					//cout << "x up " << sin(random_angle(rand_num_count))+sign_x*cell_radius << endl;
 					//cout << "y coord " << x[1] << endl;
