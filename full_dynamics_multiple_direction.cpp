@@ -29,7 +29,7 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 2; // number of times the cells move up the gradient
+	int N_steps = 80; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
@@ -163,7 +163,7 @@ int main() {
 		        /*
 		         * loop over all neighbouring particles within "diameter=2*radius" distance
 		         */
-		        for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),diameter)) {
+		        for (auto tpl: euclidean_search(particles.get_query(), get<position>(p),diameter)) {
 		            /*
 		             * tpl variable is a tuple containing:
 		             *  (0) -> neighbouring particle value_type
@@ -188,7 +188,7 @@ int main() {
 	// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
 	std::default_random_engine gen1;
 	std::uniform_real_distribution<double> uniformpi(0,2*M_PI); // can only move forward
-	VectorXf random_angle(N_steps*particles.size()*particles.size()*N_steps);  
+	VectorXf random_angle(N_steps*particles.size()*particles.size() * N_steps);  
 
 
 
@@ -266,7 +266,7 @@ int main() {
 
 			//new_length_x = int((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 
-			domain_length = domain_length + 1.0;
+			//domain_length = domain_length + 1.0;
 			domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 			//length_x_change = int( length_x_change+1); // change in the domain length
 
@@ -399,13 +399,57 @@ int main() {
 
 
 			// check if chemoattractant concentration is greater at the random direction we selected
-			//sign(cos(random_angle(rand_num_count)))
+			//sign(cos(random_angle(RAND_NUM_COUNT)))
 			//sign(sin(random_angle(rand_num_count)))
 		
 
 
+			/*std::array<int,3> sign_x;
+			std::array<int,3> sign_y;
+			for (int i = 0; i<4; ++i) {
+				 x = cos(random_angle(rand_index));
+				 double y = sin();
+				while (x > domain_min ....) {
+					 x = cos(random_angle(rand_index));
+					 y = sin();  
+				}
+				sign_x[i] = x;
+			}*/
 
-			int sign_x, sign_y;
+			std::array<double,3> random_angle;
+			std::array<int,3> sign_x;
+			std::array<int,3> sign_y;
+			for (int i=0; i < 3; i++){
+
+				double random_angle_tem = uniformpi(gen1);	
+				int sign_x_tem,sign_y_tem;
+
+				while (round((x[0] * (length_x/domain_length)+sin(random_angle_tem)+sign_x_tem*l_filo) ) < 0 || round((x[0] * (length_x/domain_length)+sin(random_angle_tem)+sign_x_tem*l_filo)) > length_x-1 || round(x[1]+ cos(random_angle_tem)+sign_y_tem*l_filo) < 0 || round(x[1]+ cos(random_angle_tem)+sign_y_tem*l_filo) > length_y-1 ){
+					random_angle_tem = uniformpi(gen1);
+
+					if(sin(random_angle_tem)<0){
+						sign_x_tem=-1;
+					}else{sign_x_tem=1;}
+
+					if(cos(random_angle_tem)<0){
+						sign_y_tem=-1;
+					}else{sign_y_tem=1;}
+
+				}
+
+				random_angle[i] = random_angle_tem;
+
+				sign_x[i] = sign_x_tem;
+				sign_y[i] = sign_y_tem;
+
+
+			}
+
+
+
+		
+
+			/*int sign_x, sign_y;
 			int sign_x_2, sign_y_2;
 			int sign_x_3, sign_y_3;
 			
@@ -452,7 +496,7 @@ int main() {
 
 			
 
-				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
+				/*if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 					case_counter +=1;
 				}
 
@@ -466,19 +510,31 @@ int main() {
 				}*/
 				//cout << "case counter value" << case_counter << endl;
 				
-				if (case_counter < 2){
+				/*if (case_counter < 2){
 					rand_num_count += 2;
 				}
 				
-			}
+			}*/
+
+
+	// print directions:
+
+		cout << "round " << ((x)[0] * (length_x/domain_length)) << endl;
+
+		cout << "first " << chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
+		cout << "second " << chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) << endl;
+		cout << "third " <<  chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
+		cout << "fourth " <<  chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo)) << endl;
+
+
 
 
 			// choose which direction to move
 
 			//if both smaller, move random direction
-			if (chemo(round((x)[0] * (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0] * (length_x/domain_length)),round(x)[1]) + diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+			if (chemo((round((x)[0] * (length_x/domain_length))),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) && chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) + diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
 
-			x += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1)));
+			x += vdouble2(sin(random_angle[2]), cos(random_angle[2]));
 			//cout << "print id " << id_[x] << endl;
 		
 
@@ -507,15 +563,15 @@ int main() {
 		
 			//cout << "print position " << count_position << endl;
 				if (free_position == true){
-					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+2)), cos(random_angle(rand_num_count+2))); // update if nothing is in the next position
+					get<position>(particles)[i] += vdouble2(sin(random_angle[2]), cos(random_angle[2])); // update if nothing is in the next position
 				}
+				
 			}
-
-		cout << "stops here " << endl;
+		//cout << "stops here " << endl;
 		// if first greater direction greater, second smaller
-		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+		else if (chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo))  && chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
 
-			x += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+			x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
 			//cout << "print id " << id_[x] << endl;
 		
 
@@ -544,15 +600,16 @@ int main() {
 		
 			//cout << "print position " << count_position << endl;
 				if (free_position == true){
-					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
+					get<position>(particles)[i] += vdouble2(sin(random_angle[0]), cos(random_angle[0])); // update if nothing is in the next position
 				}
+				
 			}
-		cout << "stops here 1" << endl;
 		// if first smaller, second bigger
-		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+		else if (chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo))  && chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
+
 
 		
-			x += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1)));
+			x += vdouble2(sin(random_angle[1]), cos(random_angle[1]));
 			//cout << "print id " << id_[x] << endl;
 		
 
@@ -581,17 +638,17 @@ int main() {
 		
 			//cout << "print position " << count_position << endl;
 				if (free_position == true){
-					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1))); // update if nothing is in the next position
+					get<position>(particles)[i] += vdouble2(sin(random_angle[1]), cos(random_angle[1])); // update if nothing is in the next position
 				}
+				break;
 			}	
-		cout << "stops here 2" << endl;
 		// if both greater choose the bigger one
-		if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo))  && chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
+		else if (chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo))  && chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
 
 
 		// if first is greater than the second
-		if (chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo)) > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
-			x += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count)));
+		if (chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) > chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
+			x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
 			//cout << "print id " << id_[x] << endl;
 		
 
@@ -618,13 +675,13 @@ int main() {
 				}
 			//cout << "print position " << count_position << endl;
 				if (free_position == true){
-					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
+					get<position>(particles)[i] += vdouble2(sin(random_angle[0]), cos(random_angle[0])); // update if nothing is in the next position
 				}
+				
 			}
-
 		// if second is greater than the first
-		if (chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)),round(x[1] + cos(random_angle(rand_num_count))+sign_y*l_filo)) < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo)),round(x[1] + cos(random_angle(rand_num_count+1))+sign_y_2*l_filo))){
-			x += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1)));
+		else if(chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
+			x += vdouble2(sin(random_angle[1]), cos(random_angle[1]));
 			//cout << "print id " << id_[x] << endl;
 		
 
@@ -652,8 +709,9 @@ int main() {
 
 			//cout << "print position " << count_position << endl;
 				if (free_position == true){
-					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count+1)), cos(random_angle(rand_num_count+1))); // update if nothing is in the next position
+					get<position>(particles)[i] += vdouble2(sin(random_angle[1]), cos(random_angle[1])); // update if nothing is in the next position
 				}
+				
 			}
 
 		
