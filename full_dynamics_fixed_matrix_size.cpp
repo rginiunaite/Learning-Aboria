@@ -449,7 +449,7 @@ int main() {
 	//cout << "size chemo " << chemo.rows() << "x" << chemo.cols() << endl;
 		// make sure that the next position is an entry of the matrix
 		// have to multiply by length_x/domain_length to come back to the same matrix size
-			if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
+			if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo)) < length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
 
 			//cout << "sin of the angle (inside the loop) " << sin(random_angle(rand_num_count)) << endl;
 			//cout << "cos of the angle (inside the loop) " << cos(random_angle(rand_num_count)) << endl;
@@ -467,8 +467,8 @@ int main() {
 
 
 
-			cout << "chemo coonc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo coonc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
+			cout << "chemo conc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+			cout << "chemo conc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
 
 
 		// need that + diff_conc to make sure that the concentration is sufficiently bigger
