@@ -29,7 +29,7 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 80; // number of times the cells move up the gradient
+	int N_steps = 100; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
@@ -467,8 +467,8 @@ int main() {
 
 
 
-			cout << "chemo conc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
-			cout << "chemo conc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
+			//cout << "chemo conc in current site " << chemo(round(x)[0],round(x)[1])<< endl;	
+			//cout << "chemo conc in other site " << chemo(round(x[0]* (length_x/domain_length) + sin(random_angle(rand_num_count)) +sign_x*l_filo),round(x[1]+cos(random_angle(rand_num_count))+sign_y*l_filo))<< endl;
 
 
 		// need that + diff_conc to make sure that the concentration is sufficiently bigger
