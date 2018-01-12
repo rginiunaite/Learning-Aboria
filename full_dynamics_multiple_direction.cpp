@@ -29,7 +29,7 @@ int main() {
 	const int length_y = 12;//120;//20;//4;
 	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
 	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 80; // number of times the cells move up the gradient
+	int N_steps = 100; // number of times the cells move up the gradient
 	const size_t N = 4; // number of cells
 	double l_filo = 27.5/10;//2; // sensing radius
 	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
@@ -183,22 +183,23 @@ int main() {
 		
 	// save particles before they move
 	vtkWriteGrid("before",0,particles.get_grid(true));
+	vtkWriteGrid("particles",t,particles.get_grid(true));
 
 
 	// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
 	std::default_random_engine gen1;
 	std::uniform_real_distribution<double> uniformpi(0,2*M_PI); // can only move forward
-	VectorXf random_angle(N_steps*particles.size()*particles.size() * N_steps);  
+	//VectorXf random_angle(N_steps*particles.size()*particles.size() * N_steps);  
 
 
 
 	// make sure I have enough because more particles will appear
-	for (int i = 0; i<N_steps*particles.size()*particles.size()*N_steps;i++){
+	/*for (int i = 0; i<N_steps*particles.size()*particles.size()*N_steps;i++){
 		random_angle(i) = uniformpi(gen1);		
 		//cout << "angle to move " << random_angle(i) << endl;
 	}
 
-	int rand_num_count = 0;
+	int rand_num_count = 0;*/
 
 	
 	int domain_len_der = 0; // for now assume linear growth
@@ -519,12 +520,12 @@ int main() {
 
 	// print directions:
 
-		cout << "round " << ((x)[0] * (length_x/domain_length)) << endl;
+		//cout << "round " << ((x)[0] * (length_x/domain_length)) << endl;
 
-		cout << "first " << chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
-		cout << "second " << chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) << endl;
-		cout << "third " <<  chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
-		cout << "fourth " <<  chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo)) << endl;
+		//cout << "first " << chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
+		//cout << "second " << chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) << endl;
+		//cout << "third " <<  chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
+		//cout << "fourth " <<  chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo)) << endl;
 
 
 
@@ -562,7 +563,9 @@ int main() {
 
 		
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+
+			// check that the position they want to move to is free and not out of bounds
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y -1 ){
 					get<position>(particles)[i] += vdouble2(sin(random_angle[2]), cos(random_angle[2])); // update if nothing is in the next position
 				}
 				
@@ -599,7 +602,8 @@ int main() {
 
 		
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+			// check that the position they want to move to is free and not out of bounds
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1 ){
 					get<position>(particles)[i] += vdouble2(sin(random_angle[0]), cos(random_angle[0])); // update if nothing is in the next position
 				}
 				
@@ -637,13 +641,14 @@ int main() {
 
 		
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+			// check that the position they want to move to is free and not out of bounds
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1 ){
 					get<position>(particles)[i] += vdouble2(sin(random_angle[1]), cos(random_angle[1])); // update if nothing is in the next position
 				}
 				break;
 			}	
 		// if both greater choose the bigger one
-		else if (chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo))  && chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
+		else if (chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) && chemo((round((x)[0]* (length_x/domain_length))),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo))){
 
 
 		// if first is greater than the second
@@ -674,7 +679,8 @@ int main() {
 				    //break;
 				}
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+			// check that the position they want to move to is free and not out of bounds
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1 ){
 					get<position>(particles)[i] += vdouble2(sin(random_angle[0]), cos(random_angle[0])); // update if nothing is in the next position
 				}
 				
@@ -708,7 +714,8 @@ int main() {
 				}
 
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+			// check that the position they want to move to is free and not out of bounds
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1 ){
 					get<position>(particles)[i] += vdouble2(sin(random_angle[1]), cos(random_angle[1])); // update if nothing is in the next position
 				}
 				
@@ -718,15 +725,6 @@ int main() {
 
 			}	
 
-
-
-		cout << "does not perform any of the movements " << endl;
-
-
-
-
-
-			
 			
 			
 			//cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
@@ -738,7 +736,7 @@ int main() {
 			//cout << "chemo coord x before the test " << round(x[0]+sin(random_angle(rand_num_count))+sign_x*cell_radius) << endl;
 			//cout << "chemo coord y before the test " << round(x[0]+cos(random_angle(rand_num_count))+sign_y*cell_radius) << endl;
 		
-				rand_num_count += 3; // update random number count	
+				//rand_num_count += 3; // update random number count	
 				
 		}// go through all the particles
 
@@ -752,7 +750,7 @@ int main() {
 			     */
 			    //cout << "." << flush;
 		#ifdef HAVE_VTK
-		vtkWriteGrid("particles",t,particles.get_grid(true));    
+		vtkWriteGrid("particles",t+1,particles.get_grid(true));    
 		#endif
 
 		//for (int i =0;i<5;++i){cout << "koks rezas " << i <<endl;}

@@ -523,7 +523,7 @@ int main() {
 
 		
 			//cout << "print position " << count_position << endl;
-				if (free_position == true){
+				if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1){
 					get<position>(particles)[i] += vdouble2(sin(random_angle(rand_num_count)), cos(random_angle(rand_num_count))); // update if nothing is in the next position
 				}
 
