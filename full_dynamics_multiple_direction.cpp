@@ -1,5 +1,8 @@
-// cells move towords high concentration of fixed gradient
-
+/*
+cells move towords high concentration of varying chemoattracted, the movement is directed, 
+ but if cells do not sense higher concentration, they move randomly
+*/
+ 
 #include "Aboria.h"
 #include <random>
 #include <map>
@@ -19,32 +22,40 @@ int main() {
 
 	// model parameters
 
-	int length_x = 24;//240;//40;//4; // length of the chemoattractant vector, for fixed domain
-	int length_x_change = 24;//240;
-	//int new_length_x_change = length_x_change;
-	double initial_domain_length = 24;
-	double domain_length = 24; //this variable is for the actual domain length
 
-	double old_length = 24;
-	const int length_y = 12;//120;//20;//4;
-	const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
-	double cell_radius = (7.5)/10;//0.5; // cell size relative to mesh
-	int N_steps = 100; // number of times the cells move up the gradient
-	const size_t N = 4; // number of cells
-	double l_filo = 27.5/10;//2; // sensing radius
-	double diff_conc = 0.15; // how much concentration has to be bigger, so that the cell moves
-	int freq_growth = 1; // domain grows linear every freq_growth time step
+    int length_x = 30;//240;//40;//4; // length of the chemoattractant vector, for fixed domain
+    double domain_length = 30; //this variable is for the actual domain length
+    double old_length = 30;// this is important for the update of the positions
+    const int length_y = 12;//120;//20;//4;
+    const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
+    double cell_radius = (7.5)/10;//0.5; // radius of a cell
+    int N_steps = 100; // number of times the cells move up the gradient
+    const size_t N = 4; // initial number of cells
+    double l_filo = 27.5/10;//2; // sensing radius
+    double diff_conc = 0.15; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
+    int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
+    int insertion_freq = 5;
 
 	// domain growth parameters
 
+	
+	/*
 	double L_0 = initial_domain_length;//300;
 	double a = 0.08/10;
-	//double t_s = -16;
  	int L_inf = 50;//1100;//100;//16;//870;
+	*/
 
+	// for logistic growth with delay
+	
+	double L_0 = 30; // will have to make this consistent with actual initial length
+	double a = 0.008;
+	double L_inf = 87;
+	double t_s = -1.6;
+	double constant = -1.95; 
+
+	double domain_len_der = 0; // for now assume linear growth
 
 	// parameters for the dynamics of chemoattractant concentration
-
 
 	double D = 1/10; // to 10^5 \nu m^2/h diffusion coefficient
 	double t = 0; // initialise time, redundant
@@ -59,32 +70,24 @@ int main() {
 	double R = 7.5/10; // \nu m cell radius
 	int lam = 100/10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
-
+    	// matrix that stores the values of concentration of chemoattractant
 	MatrixXf chemo(length_x, length_y), chemo_new(length_x,length_y);	
 
 	// initialise internalisation matrix
 	MatrixXf intern(length_x,length_y);
 
-	// generate gradient which linearly increases
+	// generate initial concentration of chemoattractant
 	for (int i = 0;i<length_x;i++){
 		for (int j = 0; j< length_y; j++){
 			chemo(i,j) = 1; // uniform concentration initially
-			chemo_new(i,j) = 1; // this is for later updates, not sure if I will need it
-			//chemo_change_len(i,j) = 1;
+			chemo_new(i,j) = 1; // this is for later updates
 		}			
 	}
 
-	// domain hasn't grown there yet
-	/*for(int i = length_x;i<L_inf;i++){
-		for (int j = 0; j< length_y; j++){
-			chemo_change_len(i,j) = 0;
-		}
-	}*/
 
-
-	// three columns for x, y, z
+	// four columns for x, y, z, u (z is necessaty for paraview)
 	
-	// form a matrix which would store x,y,z
+	// form a matrix which would store x,y,z,u
 
 	 MatrixXf chemo_3col(length_x*length_y,4), chemo_3col_ind(length_x*length_y,2); // need for because that is how paraview accepts data, third dimension is just zeros
 
@@ -189,45 +192,14 @@ int main() {
 	// choose a set of random number between 0 and pi, to avoid more rejections when it goes backwords (it would always be rejected)
 	std::default_random_engine gen1;
 	std::uniform_real_distribution<double> uniformpi(0,2*M_PI); // can only move forward
-	//VectorXf random_angle(N_steps*particles.size()*particles.size() * N_steps);  
 
 
 
-	// make sure I have enough because more particles will appear
-	/*for (int i = 0; i<N_steps*particles.size()*particles.size()*N_steps;i++){
-		random_angle(i) = uniformpi(gen1);		
-		//cout << "angle to move " << random_angle(i) << endl;
-	}
-
-	int rand_num_count = 0;*/
-
-	
-	int domain_len_der = 0; // for now assume linear growth
-	double update = 0;
-
-
-
-		// choose diff_domain random numbers from 2 to length_x, to account for positions where extra entry will be added
-	//cout << "stops, this is diff_domain " << diff_domain << endl;
-	
-		/* nesamone
-		std::default_random_engine gen2;
-		std::uniform_real_distribution<double> uniformlen(2,length_x-1); // random position in x
-		VectorXf random_num_long(1000);  //vector to store lost of random numbers random 
-		cout << "unhappy here" << endl;
-		for (int i = 0; i<1000;i++){
-			random_num_long(i) = int(uniformlen(gen2));
-		cout << "unhappy here, LT" << endl;		
-
-		}
-
-		int rand_count =0; // this will loop through long random vector
-	*/
 
 	for (int t = 0; t < N_steps; t++){
 	// insert new cells at the start of the domain at insertion time (have to think about this insertion time)
 
-		 if (t % 5 == 0 ){
+		 if (t % insertion_freq == 0 ){
 			bool free_position = false;
 			particle_type::value_type p;
 			get<radius>(p) = cell_radius;
@@ -292,9 +264,9 @@ int main() {
 				for (int k =0; k<particles.size();k++){
 					vdouble2 x;
 					x = get<position>(particles[k]);
-					//intern(i,j) = intern(i,j) + exp(-((i-x[0]-update)*(i-x[0]-update)+(j-x[1])*(j-x[1]))/(2*R*R));
+
 					intern(i,j) = intern(i,j) + exp(- (((domain_length/length_x)*i-x[0])*((domain_length/length_x)*i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
-					//intern(i,j) = intern(i,j) + exp(- ((domain_length)*(domain_length)*(i-x[0])*(i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R));
+					
 				}			
 			}
     		}	
@@ -302,7 +274,7 @@ int main() {
 		for (int i=1;i<length_x-1;i++){
 				for (int j=1;j<length_y-1;j++){
 					chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
-					//chemo_new(i,j) = dt * (D*((1/((domain_length)*(domain_length)))* (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) *chemo(i,j) ) + chemo(i,j);
+				
 				}
 				//cout << "print the internalisation term " << intern(i,j) << endl;
 				//cout << "new chemo " << chemo_new(i,j) << endl;
@@ -398,25 +370,7 @@ int main() {
 				//cout << "x coord " << x[0] << endl;	
 
 
-
-			// check if chemoattractant concentration is greater at the random direction we selected
-			//sign(cos(random_angle(RAND_NUM_COUNT)))
-			//sign(sin(random_angle(rand_num_count)))
-		
-
-
-			/*std::array<int,3> sign_x;
-			std::array<int,3> sign_y;
-			for (int i = 0; i<4; ++i) {
-				 x = cos(random_angle(rand_index));
-				 double y = sin();
-				while (x > domain_min ....) {
-					 x = cos(random_angle(rand_index));
-					 y = sin();  
-				}
-				sign_x[i] = x;
-			}*/
-
+			// create an array to store random directions 
 			std::array<double,3> random_angle;
 			std::array<int,3> sign_x;
 			std::array<int,3> sign_y;
@@ -445,88 +399,6 @@ int main() {
 
 
 			}
-
-
-
-		
-
-			/*int sign_x, sign_y;
-			int sign_x_2, sign_y_2;
-			int sign_x_3, sign_y_3;
-			
-
-
-			// make sure that I chose all three angles that are within the domain, if not select a different one
-
-			
-			int case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
-		
-			while (case_counter < 2){
-				cout << "enters case counter" << endl;
-				case_counter = 0 ; // variable that is equal to 3 if all the movements are within the domain
-
-				// make sure that I choose the right direction when taking into account cell radius
-
-				if(sin(random_angle(rand_num_count))<0){
-					sign_x=-1;
-				}else{sign_x=1;}
-
-				if(cos(random_angle(rand_num_count))<0){
-					sign_y=-1;
-				}else{sign_y=1;}
-
-				// HAVE TO CHOOSE TWO ANGLES 
-
-				if(sin(random_angle(rand_num_count+1))<0){
-					sign_x_2=-1;
-				}else{sign_x_2=1;}
-
-				if(cos(random_angle(rand_num_count+1))<0){
-					sign_y_2=-1;
-				}else{sign_y_2=1;}
-
-
-			
-				/*if(sin(random_angle(rand_num_count+2))<0){
-					sign_x_3=-1;
-				}else{sign_x_3=1;}
-
-				if(cos(random_angle(rand_num_count+2))<0){
-					sign_y_3=-1;
-				}else{sign_y_3=1;}*/
-
-			
-
-				/*if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count))+sign_x*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count))+sign_y*l_filo)<length_y ){
-					case_counter +=1;
-				}
-
-				//cout << "case counter value" << case_counter << endl;
-				if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+1))+sign_x_2*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count+1))+sign_y_2*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count+1))+sign_y_2*l_filo)<length_y ){
-					case_counter +=1;
-				}
-				//cout << "case counter value" << case_counter << endl;
-				/*if (round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+2))+sign_x_3*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle(rand_num_count+2))+sign_x_3*l_filo))< length_x && round(x[1]+ cos(random_angle(rand_num_count+2))+sign_y_3*l_filo) >-1 && round(x[1]+ cos(random_angle(rand_num_count+2))+sign_y_3*l_filo)<length_y ){
-					case_counter +=1;
-				}*/
-				//cout << "case counter value" << case_counter << endl;
-				
-				/*if (case_counter < 2){
-					rand_num_count += 2;
-				}
-				
-			}*/
-
-
-	// print directions:
-
-		//cout << "round " << ((x)[0] * (length_x/domain_length)) << endl;
-
-		//cout << "first " << chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
-		//cout << "second " << chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[0])+sign_x[0]*l_filo)),round(x[1] + cos(random_angle[0])+sign_y[0]*l_filo)) << endl;
-		//cout << "third " <<  chemo((round((x)[0] * (length_x/domain_length))),round(x)[1]) << endl;
-		//cout << "fourth " <<  chemo(round((x[0]* (length_x/domain_length)+sin(random_angle[1])+sign_x[1]*l_filo)),round(x[1] + cos(random_angle[1])+sign_y[1]*l_filo)) << endl;
-
 
 
 
