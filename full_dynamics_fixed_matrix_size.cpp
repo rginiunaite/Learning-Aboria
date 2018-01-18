@@ -50,8 +50,8 @@ int main() {
 	double L_0 = 30; // will have to make this consistent with actual initial length
 	double a = 0.008;
 	double L_inf = 87;
-	double t_s = -1.6;
-	double constant = -1.95; 	
+	double t_s = 1.6;
+	double constant = 20;
 
 	double domain_len_der = 0; // initialise derivative of the domain growth function
 
@@ -188,6 +188,7 @@ int main() {
 		
 	// save particles before they move
 	vtkWriteGrid("before",0,particles.get_grid(true));
+	vtkWriteGrid("particles",t,particles.get_grid(true));
 
 
 	// choose a set of random number between 0 and 2*pi, to avoid more rejections when it goes backwords (it would always be rejected)
@@ -236,13 +237,14 @@ int main() {
 		if (t % freq_growth == 0){
 
 			//domain_length = domain_length + 1.0;
-			domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
+			domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
 
-			domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
+			domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
 			
 			//domain_length =  L_0 * ((L_inf * exp(a*(t-t_s)*L_inf))/(L_inf-1+exp(a*(t-t_s)*L_inf))+ constant);
 
-			//domain_len_der = L_0 * ((L_inf*L_inf*a * exp(a*(t-t_s)*L_inf))/(L_inf-1+exp(a*(t-t_s)*L_inf)) - (L_inf * L_inf * a * exp(2*a*(t-t_s)*L_inf))/((L_inf-1+exp(a*(t-t_s)*L_inf))*(L_inf-1+exp(a*(t-t_s)*L_inf))));
+			//domain_len_der = L_0 * ((L_inf*L_inf*a * exp(a*(t-t_s)*L_inf))/(L_inf-1+exp(a*(t-t_s)*L_inf)) - ...
+            // (L_inf * L_inf * a * exp(2*a*(t-t_s)*L_inf))/((L_inf-1+exp(a*(t-t_s)*L_inf))*(L_inf-1+exp(a*(t-t_s)*L_inf))));
 
 
 

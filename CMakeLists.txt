@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.9)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Aboria/cmake"
-                        ${CMAKE_MODULE_PATH})
+        ${CMAKE_MODULE_PATH})
 
 # Boost
 find_package(Boost 1.50.0 COMPONENTS python REQUIRED)
@@ -22,6 +22,7 @@ list(APPEND INCLUDES ${EIGEN3_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
 
+
 # Aboria
 set(Aboria_LOG_LEVEL 1 CACHE STRING "Logging level (1 = least, 3 = most)")
 add_definitions(-DABORIA_LOG_LEVEL=${Aboria_LOG_LEVEL})
@@ -41,7 +42,11 @@ include_directories(src ${INCLUDES})
 #add_executable(linear_move_up_the_gradient linear_move_up_the_gradient.cpp)
 #add_executable(varying_chemo_random varying_chemo_random.cpp)
 #add_executable(neat_fixed_gradient neat_fixed_gradient.cpp)
-add_executable(growing_domain growing_domain.cpp)
+#add_executable(growing_domain growing_domain.cpp)
+#add_executable(full_dynamics full_dynamics.cpp)
+add_executable(full_dynamics_fixed_matrix_size full_dynamics_fixed_matrix_size.cpp)
+#add_executable(full_dynamics_multiple_direction full_dynamics_multiple_direction.cpp)
+#add_executable(leaders_followers leaders_followers.cpp)
 
 #target_link_libraries(fixed_gradient ${LIBRARIES})
 #target_link_libraries(fixed_gradient2 ${LIBRARIES})
@@ -52,4 +57,8 @@ add_executable(growing_domain growing_domain.cpp)
 #target_link_libraries(linear_move_up_the_gradient ${LIBRARIES})
 #target_link_libraries(varying_chemo_random ${LIBRARIES})
 #target_link_libraries(neat_fixed_gradient ${LIBRARIES})
-target_link_libraries(growing_domain ${LIBRARIES})
+#target_link_libraries(growing_domain ${LIBRARIES})
+#target_link_libraries(full_dynamics ${LIBRARIES})
+target_link_libraries(full_dynamics_fixed_matrix_size ${LIBRARIES})
+#target_link_libraries(full_dynamics_multiple_direction ${LIBRARIES})
+#target_link_libraries(leaders_followers ${LIBRARIES})
