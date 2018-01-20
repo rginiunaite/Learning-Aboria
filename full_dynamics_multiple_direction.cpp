@@ -50,8 +50,8 @@ int main() {
     double L_0 = 30; // will have to make this consistent with actual initial length
     double a = 0.008;
     double L_inf = 87;
-    double t_s = -1.6;
-    double constant = -1.95;
+    double t_s = 16;
+    double constant = 30;
 
     double domain_len_der = 0; // for now assume linear growth
 
@@ -193,7 +193,7 @@ int main() {
     std::default_random_engine gen1;
     std::uniform_real_distribution<double> uniformpi(0,2*M_PI); // can only move forward
 
-f
+
 
     for (int t = 0; t < N_steps; t++){
         // insert new cells at the start of the domain at insertion time (have to think about this insertion time)
@@ -236,18 +236,22 @@ f
         if (t % freq_growth == 0){
             //cout << "are you never in " << endl;
 
-            //new_length_x = int((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
+            // no time delay
+            //domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 
-            //domain_length = domain_length + 1.0;
-            domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
-            //length_x_change = int( length_x_change+1); // change in the domain length
+            //domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
+
+            // from the paper
+            //domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
+
+            //domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
+
+            // with time delay and constant to make the initial conditions consistent
+            domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
+
+            domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
 
 
-
-            //update = (double(diff_domain)/double(domain_length));
-            //cout << "update "<< update << endl;
-            //cout << "diff domain " << diff_domain << endl;
-            domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
         }
         //cout << "diff domain outside " << diff_domain << endl;
 

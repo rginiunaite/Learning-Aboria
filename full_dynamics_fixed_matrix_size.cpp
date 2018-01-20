@@ -50,8 +50,8 @@ int main() {
 	double L_0 = 30; // will have to make this consistent with actual initial length
 	double a = 0.008;
 	double L_inf = 87;
-	double t_s = 1.6;
-	double constant = 20;
+	double t_s = 16;
+	double constant = 30;
 
 	double domain_len_der = 0; // initialise derivative of the domain growth function
 
@@ -236,18 +236,20 @@ int main() {
 
 		if (t % freq_growth == 0){
 
-			//domain_length = domain_length + 1.0;
-			domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
+            // no time delay
+            //domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
 
-			domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
-			
-			//domain_length =  L_0 * ((L_inf * exp(a*(t-t_s)*L_inf))/(L_inf-1+exp(a*(t-t_s)*L_inf))+ constant);
+            //domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
 
-			//domain_len_der = L_0 * ((L_inf*L_inf*a * exp(a*(t-t_s)*L_inf))/(L_inf-1+exp(a*(t-t_s)*L_inf)) - ...
-            // (L_inf * L_inf * a * exp(2*a*(t-t_s)*L_inf))/((L_inf-1+exp(a*(t-t_s)*L_inf))*(L_inf-1+exp(a*(t-t_s)*L_inf))));
+            // from the paper
+            //domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
 
+            //domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
 
+            // with time delay and constant to make the initial conditions consistent
+            domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
 
+            domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
 
 		}
 			//cout << "diff domain outside " << diff_domain << endl;
@@ -291,7 +293,7 @@ int main() {
 				}*/
 
 
-
+                // no source
 				chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j)  - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);	
 
 				}

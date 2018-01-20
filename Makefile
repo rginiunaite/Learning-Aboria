@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/rasa/CLionProjects/Learning-Aboria
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/home/rasa/Documents/clion-2017.3.1/bin/cmake/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -77,6 +66,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/home/rasa/Documents/clion-2017.3.1/bin/cmake/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named full_dynamics_fixed_matrix_size
+# Target rules for targets named leaders_followers
 
 # Build rule for target.
-full_dynamics_fixed_matrix_size: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 full_dynamics_fixed_matrix_size
-.PHONY : full_dynamics_fixed_matrix_size
+leaders_followers: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 leaders_followers
+.PHONY : leaders_followers
 
 # fast build rule for target.
-full_dynamics_fixed_matrix_size/fast:
-	$(MAKE) -f CMakeFiles/full_dynamics_fixed_matrix_size.dir/build.make CMakeFiles/full_dynamics_fixed_matrix_size.dir/build
-.PHONY : full_dynamics_fixed_matrix_size/fast
+leaders_followers/fast:
+	$(MAKE) -f CMakeFiles/leaders_followers.dir/build.make CMakeFiles/leaders_followers.dir/build
+.PHONY : leaders_followers/fast
 
-full_dynamics_fixed_matrix_size.o: full_dynamics_fixed_matrix_size.cpp.o
+leaders_followers.o: leaders_followers.cpp.o
 
-.PHONY : full_dynamics_fixed_matrix_size.o
+.PHONY : leaders_followers.o
 
 # target to build an object file
-full_dynamics_fixed_matrix_size.cpp.o:
-	$(MAKE) -f CMakeFiles/full_dynamics_fixed_matrix_size.dir/build.make CMakeFiles/full_dynamics_fixed_matrix_size.dir/full_dynamics_fixed_matrix_size.cpp.o
-.PHONY : full_dynamics_fixed_matrix_size.cpp.o
+leaders_followers.cpp.o:
+	$(MAKE) -f CMakeFiles/leaders_followers.dir/build.make CMakeFiles/leaders_followers.dir/leaders_followers.cpp.o
+.PHONY : leaders_followers.cpp.o
 
-full_dynamics_fixed_matrix_size.i: full_dynamics_fixed_matrix_size.cpp.i
+leaders_followers.i: leaders_followers.cpp.i
 
-.PHONY : full_dynamics_fixed_matrix_size.i
+.PHONY : leaders_followers.i
 
 # target to preprocess a source file
-full_dynamics_fixed_matrix_size.cpp.i:
-	$(MAKE) -f CMakeFiles/full_dynamics_fixed_matrix_size.dir/build.make CMakeFiles/full_dynamics_fixed_matrix_size.dir/full_dynamics_fixed_matrix_size.cpp.i
-.PHONY : full_dynamics_fixed_matrix_size.cpp.i
+leaders_followers.cpp.i:
+	$(MAKE) -f CMakeFiles/leaders_followers.dir/build.make CMakeFiles/leaders_followers.dir/leaders_followers.cpp.i
+.PHONY : leaders_followers.cpp.i
 
-full_dynamics_fixed_matrix_size.s: full_dynamics_fixed_matrix_size.cpp.s
+leaders_followers.s: leaders_followers.cpp.s
 
-.PHONY : full_dynamics_fixed_matrix_size.s
+.PHONY : leaders_followers.s
 
 # target to generate assembly for a file
-full_dynamics_fixed_matrix_size.cpp.s:
-	$(MAKE) -f CMakeFiles/full_dynamics_fixed_matrix_size.dir/build.make CMakeFiles/full_dynamics_fixed_matrix_size.dir/full_dynamics_fixed_matrix_size.cpp.s
-.PHONY : full_dynamics_fixed_matrix_size.cpp.s
+leaders_followers.cpp.s:
+	$(MAKE) -f CMakeFiles/leaders_followers.dir/build.make CMakeFiles/leaders_followers.dir/leaders_followers.cpp.s
+.PHONY : leaders_followers.cpp.s
 
 # Help Target
 help:
@@ -156,12 +156,12 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... full_dynamics_fixed_matrix_size"
-	@echo "... full_dynamics_fixed_matrix_size.o"
-	@echo "... full_dynamics_fixed_matrix_size.i"
-	@echo "... full_dynamics_fixed_matrix_size.s"
+	@echo "... edit_cache"
+	@echo "... leaders_followers"
+	@echo "... leaders_followers.o"
+	@echo "... leaders_followers.i"
+	@echo "... leaders_followers.s"
 .PHONY : help
 
 
