@@ -29,12 +29,14 @@ int main() {
     const int length_y = 12;//120;//20;//4;
     const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     double cell_radius = (7.5)/10;//0.5; // radius of a cell
-    int N_steps = 200; // number of times the cells move up the gradient
+    int N_steps = 100; // number of times the cells move up the gradient
     const size_t N = 3; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
-    double diff_conc = 0.15; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
+    double diff_conc = 0.05; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
     int insertion_freq = 5;
+    double speed_l = 4; // speed of a leader cell
+    double speed_f = 5; // speed of a follower cell
 
     // domain growth parameters
 
@@ -63,7 +65,7 @@ int main() {
     double dt = 0.1/10; // time step
     int dx = 1; // space step in x direction
     int dy = 1; // space step in y direction
-    double kai = 10;//0.0001/10; // to 1 /h production rate of chemoattractant
+    double kai = 1/10;//0.0001/10; // to 1 /h production rate of chemoattractant
 
 
     // parameters for internalisation
@@ -268,9 +270,6 @@ int main() {
             }
 
 
-            if (free_position == true){
-                followers.push_back(f);}
-
             // find the closest leader or other follower and set the attach to it
 
             // variables to keep track of distances
@@ -336,6 +335,10 @@ int main() {
                 get<attached_to_id>(f) = 0; // the id of a leader
                 get<attached_to_type>(f) = 0; // dettached
             }
+            cout << "attached to " << get<attached_to_id>(f) << endl;
+
+            if (free_position == true){
+                followers.push_back(f);}
 
         }
 
@@ -552,9 +555,14 @@ int main() {
             // choose which direction to move
 
             // store variables for concentration at new locations
+
+            cout << "round " << round(x)[1] << endl;
+
             double old_chemo = chemo((round((x)[0] * (length_x / domain_length))),round(x)[1]);
+
             double new_chemo_1 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[0]) + sign_x[0] * l_filo)),
                                        round(x[1] + cos(random_angle[0]) + sign_y[0] * l_filo));
+
             double new_chemo_2 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[1]) + sign_x[1] * l_filo)),
                                        round(x[1] + cos(random_angle[1]) + sign_y[1] * l_filo));
 
@@ -607,9 +615,9 @@ int main() {
                 //cout << "print position " << count_position << endl;
 
                 // check that the position they want to move to is free and not out of bounds
-                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                    round(x[1]) < length_y - 1) {
+                if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[2]) )) > 0 &&
+                        round((x[0] * (length_x / domain_length) + sin(random_angle[2]))) < length_x - 1 && round(x[1] + cos(random_angle[2])) > 0 &&
+                        round(x[1] + cos(random_angle[2])) < length_y - 1) {
                     get<position>(particles)[i] += vdouble2(sin(random_angle[2]),
                                                             cos(random_angle[2])); // update if nothing is in the next position
                     get<direction>(particles)[i] = (sin(random_angle[2]),
@@ -654,13 +662,13 @@ int main() {
 
                 //cout << "print position " << count_position << endl;
                 // check that the position they want to move to is free and not out of bounds
-                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                    round(x[1]) < length_y - 1) {
+                if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
+                    round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
+                    round(x[1] + cos(random_angle[0])) < length_y - 1){
                     get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
                                                             cos(random_angle[0])); // update if nothing is in the next position
-                    get<direction>(particles)[i] = (sin(random_angle[2]),
-                            cos(random_angle[2]));
+                    get<direction>(particles)[i] = (sin(random_angle[0]),
+                            cos(random_angle[0]));
                 }
 
             }
@@ -703,13 +711,13 @@ int main() {
 
                 //cout << "print position " << count_position << endl;
                 // check that the position they want to move to is free and not out of bounds
-                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                    round(x[1]) < length_y - 1) {
+                if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
+                     round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
+                     round(x[1] + cos(random_angle[1])) < length_y - 1){
                     get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
                                                             cos(random_angle[1])); // update if nothing is in the next position
-                    get<direction>(particles)[i] = (sin(random_angle[2]),
-                            cos(random_angle[2]));
+                    get<direction>(particles)[i] = (sin(random_angle[1]),
+                            cos(random_angle[1]));
                 }
                 break;
             }
@@ -751,13 +759,13 @@ int main() {
                     }
                     //cout << "print position " << count_position << endl;
                     // check that the position they want to move to is free and not out of bounds
-                    if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                        round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                        round(x[1]) < length_y - 1) {
+                    if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
+                        round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
+                        round(x[1] + cos(random_angle[0])) < length_y - 1){
                         get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
                                                                 cos(random_angle[0])); // update if nothing is in the next position
-                        get<direction>(particles)[i] = (sin(random_angle[2]),
-                                cos(random_angle[2]));
+                        get<direction>(particles)[i] = (sin(random_angle[0]),
+                                cos(random_angle[0]));
                     }
 
                 }
@@ -791,13 +799,13 @@ int main() {
 
                     //cout << "print position " << count_position << endl;
                     // check that the position they want to move to is free and not out of bounds
-                    if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                        round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                        round(x[1]) < length_y - 1) {
+                    if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
+                        round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
+                        round(x[1] + cos(random_angle[1])) < length_y - 1) {
                         get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
                                                                 cos(random_angle[1])); // update if nothing is in the next position
-                        get<direction>(particles)[i] = (sin(random_angle[2]),
-                                cos(random_angle[2]));
+                        get<direction>(particles)[i] = (sin(random_angle[1]),
+                                cos(random_angle[1]));
                     }
                 }
             }
@@ -806,6 +814,7 @@ int main() {
 
         for (int i = 0; i < followers.size(); i++) {
 
+            cout << "next time attached to " << get<attached_to_id>(followers[i]) << endl;
             vdouble2 x;
             x = get<position>(followers[i]);
 
@@ -875,8 +884,8 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
-                    get<position>(particles)[i] += direction_cur; // update if nothing is in the next position
-                    get<direction>(particles)[i] = direction_cur;
+                    get<position>(followers)[i] += direction_cur; // update if nothing is in the next position
+                    get<direction>(followers)[i] = direction_cur;
                 }
 
             }
@@ -946,8 +955,8 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
-                    get<position>(particles)[i] += direction_cur; // update if nothing is in the next position
-                    get<direction>(particles)[i] = direction_cur;
+                    get<position>(followers)[i] += direction_cur; // update if nothing is in the next position
+                    get<direction>(followers)[i] = direction_cur;
                 }
 
             }
