@@ -29,8 +29,8 @@ int main() {
     const int length_y = 12;//120;//20;//4;
     const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     double cell_radius = (7.5)/10;//0.5; // radius of a cell
-    int N_steps = 100; // number of times the cells move up the gradient
-    const size_t N = 4; // initial number of cells
+    int N_steps = 200; // number of times the cells move up the gradient
+    const size_t N = 3; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
     double diff_conc = 0.15; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
@@ -87,7 +87,7 @@ int main() {
     }
 
 
-    // four columns for x, y, z, u (z is necessaty for paraview)
+    // four columns for x, y, z, u (z is necessary for paraview)
 
     // form a matrix which would store x,y,z,u
 
@@ -145,21 +145,29 @@ int main() {
     //ABORIA_VARIABLE(velocity,vdouble2,"velocity")
     ABORIA_VARIABLE(radius,double,"radius")
     ABORIA_VARIABLE(type,int,"type") // 1 if a cell is a leader, 0 if it is attached to another cell, 2 if dettached
-    typedef Particles<std::tuple<radius,type>,2> particle_type; // 2 stands for dimension
-    typedef Particles<std::tuple<radius,type>,2> followers_type;
-    typedef Particles<std::tuple<radius,type>,2> attached_followers_type;
-    typedef Particles<std::tuple<radius,type>,2> detached_followers_type;
+    ABORIA_VARIABLE(direction,vdouble2,"direction")
+    ABORIA_VARIABLE(attached_to_id,int,"attached_to_id")
+    ABORIA_VARIABLE(attached_to_type,int,"attached_to_type")
+    typedef Particles<std::tuple<radius, direction>,2> particle_type; // 2 stands for dimension
+    typedef Particles<std::tuple<radius, attached_to_id, attached_to_type, direction>,2> followers_type;
+    /*
+     * if attached to a leader attached_to_type = 2;
+     * if attached to a follower attached_to_type = 1;
+     * if dettached attached_to_type = 0;
+     * */
+    //typedef Particles<std::tuple<radius, attached_to, >,2> attached_followers_type;
+    //typedef Particles<std::tuple<radius,type>,2> detached_followers_type;
 
     //typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
     typedef particle_type::position position;
     typedef followers_type::position position;
-    typedef attached_followers_type::position position;
-    typedef detached_followers_type::position position;
+    //typedef attached_followers_type::position position;
+    //typedef detached_followers_type::position position;
 
     particle_type particles;
     followers_type followers;
-    attached_followers_type attached_followers;
-    detached_followers_type detached_followers;
+    //attached_followers_type attached_followers;
+    //detached_followers_type detached_followers;
 
     std::default_random_engine gen;
     std::uniform_real_distribution<double> uniform(2,length_y-1);
@@ -177,7 +185,6 @@ int main() {
         bool free_position = false;
         particle_type::value_type p;
         get<radius>(p) = cell_radius;
-        get<type>(p) = i; // each will have a different cel type, this will be used to correctly determine the movement of the attached cells
         while(free_position == false){
             get<position>(p) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
             free_position = true;
@@ -217,16 +224,16 @@ int main() {
 
         if (t % insertion_freq == 0 ){
             bool free_position = false;
-            followers_type::value_type p;
-            get<radius>(p) = cell_radius;
+            followers_type::value_type f;
+            get<radius>(f) = cell_radius;
 
 
-            get<position>(p) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
+            get<position>(f) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
             free_position = true;
             /*
              * loop over all neighbouring leaders within "dem_diameter" distance
              */
-            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),diameter)) {
+            for (auto tpl: euclidean_search(particles.get_query(),get<position>(f),diameter)) {
                 /*
                  * tpl variable is a tuple containing:
                  *  (0) -> neighbouring particle value_type
@@ -242,10 +249,10 @@ int main() {
             }
 
             /*
-             * loop over all neighbouring leaders within "dem_diameter" distance
+             * loop over all neighbouring leaders within "diameter" distance
              */
 
-            for (auto tpl: euclidean_search(followers.get_query(),get<position>(p),diameter)) {
+            for (auto tpl: euclidean_search(followers.get_query(),get<position>(f),diameter)) {
                 /*
                  * tpl variable is a tuple containing:
                  *  (0) -> neighbouring particle value_type
@@ -253,7 +260,7 @@ int main() {
                  *         from query point
                  */
                 const vdouble2& dx = std::get<1>(tpl);
-                const particle_type::value_type& j = std::get<0>(tpl);
+                const followers_type::value_type& j = std::get<0>(tpl);
                 if (dx.norm() <  diameter) {
                     free_position = false;
                     break;
@@ -262,9 +269,9 @@ int main() {
 
 
             if (free_position == true){
-                followers.push_back(p);}
+                followers.push_back(f);}
 
-            // find the closest leader or other follower and set the type to x10 (if the other is a leader), equivalent (if follower)
+            // find the closest leader or other follower and set the attach to it
 
             // variables to keep track of distances
             particle_type::value_type closest_neighbour;
@@ -273,7 +280,7 @@ int main() {
             double distance_follower = l_filo;
 
             // closest leader
-            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),l_filo)) {
+            for (auto tpl: euclidean_search(particles.get_query(),get<position>(f),l_filo)) {
                 /*
                  * tpl variable is a tuple containing:
                  *  (0) -> neighbouring particle value_type
@@ -282,18 +289,19 @@ int main() {
                  */
                 const vdouble2& dx = std::get<1>(tpl);
                 const particle_type::value_type& j = std::get<0>(tpl);
-                cout << "norm " << dx.norm() << endl;
+
                 if (dx.norm() <  l_filo) {
                     // if the new distance is shorter than the previous shortest, set these new values
                     if (distance > dx.norm()) {
-                        closest_neighbour = std::get<0>(tpl);
+                        closest_neighbour = j;
                         distance = dx.norm();
                     }
                 }
             }
 
             // closest follower
-            for (auto tpl: euclidean_search(followers.get_query(),get<position>(p),l_filo)) {
+
+            for (auto tpl: euclidean_search(followers.get_query(),get<position>(f),l_filo)) {
                 /*
                  * tpl variable is a tuple containing:
                  *  (0) -> neighbouring particle value_type
@@ -301,12 +309,12 @@ int main() {
                  *         from query point
                  */
                 const vdouble2& dx = std::get<1>(tpl);
-                const particle_type::value_type& j = std::get<0>(tpl);
-                cout << "norm " << dx.norm() << endl;
+                const followers_type::value_type& j = std::get<0>(tpl);
+
                 if (dx.norm() <  l_filo) {
                     // if the new distance is shorter than the previous shortest, set these new values
                     if (distance > dx.norm()) {
-                        closest_neighbour_follower = std::get<0>(tpl);
+                        closest_neighbour_follower = j;
                         distance_follower = dx.norm();
                     }
                 }
@@ -317,15 +325,16 @@ int main() {
             cout << " follower distance " << distance_follower << endl;
 
             if (distance < distance_follower){
-                cout << "type of the closest leader " << get<type>(closest_neighbour) << endl;
-                get<type>(p) = 10*get<type>(closest_neighbour); // set type to 10 times the type of the leader it is attached to
-                cout << "type of the neighbour " << get<type>(p) << endl;
+                get<attached_to_id>(f) = 1;//get<id>(closest_neighbour); // the id of a leader
+                get<attached_to_type>(f) = 2; // attached to a leader
             }
             else if (distance > distance_follower){
-                get<type>(p) = get<type>(closest_neighbour_follower); // set to the one of the closest follower
+                get<attached_to_id>(f) = 1;//get<id>(closest_neighbour_follower); // the id of a leader
+                get<attached_to_type>(f) = 1; // attached to a follower
             }
             else if (distance == distance_follower){
-                get<type>(p) = 0;
+                get<attached_to_id>(f) = 0; // the id of a leader
+                get<attached_to_type>(f) = 0; // dettached
             }
 
         }
@@ -365,10 +374,18 @@ int main() {
         // internalisation
         for (int i =0;i<length_x;i++){
             for(int j = 0;j<length_y;j++){
-                //go thorugh all the cells
+                //go through all the cells
+                // leaders
                 for (int k =0; k<particles.size();k++){
                     vdouble2 x;
                     x = get<position>(particles[k]);
+
+                    intern(i,j) = intern(i,j) + exp(- (((domain_length/length_x)*i-x[0])*((domain_length/length_x)*i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R)); // mapping to fixed domain
+                }
+                //followers
+                for (int k =0; k<followers.size();k++){
+                    vdouble2 x;
+                    x = get<position>(followers[k]);
 
                     intern(i,j) = intern(i,j) + exp(- (((domain_length/length_x)*i-x[0])*((domain_length/length_x)*i-x[0])+(j-x[1])*(j-x[1]))/(2*R*R)); // mapping to fixed domain
                 }
@@ -488,7 +505,7 @@ int main() {
 
         // move all the leaders
 
-        for (int i=0; i < particles.size(); i++){
+        for (int i = 0; i < particles.size(); i++) {
 
 
             vdouble2 x;
@@ -497,46 +514,218 @@ int main() {
             //cout << "print id " << get<id>(particles[i]) << endl;
             //cout << "x coord " << x[0] << endl;
 
-            // variable to choose a random angle
-            double random_angle;
-            int sign_x, sign_y;
 
-            // choose a random angle
-            random_angle = uniformpi(gen1);
+            // create an array to store random directions
+            std::array<double, 3> random_angle;
+            std::array<int, 3> sign_x;
+            std::array<int, 3> sign_y;
+            for (int i = 0; i < 3; i++) {
 
-            // make sure that I choose the right direction when taking into account cell radius
+                double random_angle_tem = uniformpi(gen1);
+                int sign_x_tem, sign_y_tem;
+
+                while (round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) < 0 ||
+                       round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) >
+                       length_x - 1 || round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) < 0 ||
+                       round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) > length_y - 1) {
+                    random_angle_tem = uniformpi(gen1);
+
+                    if (sin(random_angle_tem) < 0) {
+                        sign_x_tem = -1;
+                    } else { sign_x_tem = 1; }
+
+                    if (cos(random_angle_tem) < 0) {
+                        sign_y_tem = -1;
+                    } else { sign_y_tem = 1; }
+
+                }
+
+                random_angle[i] = random_angle_tem;
+
+                sign_x[i] = sign_x_tem;
+                sign_y[i] = sign_y_tem;
 
 
-            if(sin(random_angle)<0){
-                sign_x=-1;
-            }else{sign_x=1;}
-
-            if(cos(random_angle)<0){
-                sign_y=-1;
-            }else{sign_y=1;}
+            }
 
 
+            // choose which direction to move
+
+            // store variables for concentration at new locations
+            double old_chemo = chemo((round((x)[0] * (length_x / domain_length))),round(x)[1]);
+            double new_chemo_1 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[0]) + sign_x[0] * l_filo)),
+                                       round(x[1] + cos(random_angle[0]) + sign_y[0] * l_filo));
+            double new_chemo_2 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[1]) + sign_x[1] * l_filo)),
+                                       round(x[1] + cos(random_angle[1]) + sign_y[1] * l_filo));
 
 
-            // check if the x coordinates are not out of the domain, if they are, ignore that step
-            // have to multiply by length_x/domain_length to come back to the same matrix size
-            if (round((x[0] * (length_x/domain_length)+sin(random_angle)+sign_x*l_filo) )>-1 && round((x[0] * (length_x/domain_length)+sin(random_angle)+sign_x*l_filo)) < length_x && round(x[1]+ cos(random_angle)+sign_y*l_filo) >-1 && round(x[1]+ cos(random_angle)+sign_y*l_filo)<length_y ){
-
-                // need that + diff_conc to make sure that the concentration is sufficiently bigger
-                // map to the fixed domain to check the difference in concentration
+            //if both smaller, move random direction
+            //absolute
+            if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
 
 
-                if (chemo(round((x)[0]* (length_x/domain_length)),round(x)[1])+diff_conc < chemo(round((x[0]* (length_x/domain_length)+sin(random_angle)+sign_x*l_filo)),round(x[1] + cos(random_angle)+sign_y*l_filo))){
+                // relative
+                //if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
+
+                x += vdouble2(sin(random_angle[2]), cos(random_angle[2]));
+                //cout << "print id " << id_[x] << endl;
 
 
-                    // check if there are no cells around the position where I want to move
+                //cout << "Position "<< x << endl;
+                int count_position = 0;
+                bool free_position = true; // check if the neighbouring position is free
 
-                    /*
-                     * loop over all neighbouring particles within a euclidean distance
-                     * of size "diameter" after it moved
-                     */
-                    x += vdouble2(sin(random_angle), cos(random_angle));
+                // if this loop is entered, it means that there is another cell where I want to move
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
 
+                    count_position += 1; // just to check if this works
+                    particle_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                }
+
+                for (const auto &k: euclidean_search(followers.get_query(), x, diameter)) {
+
+                    followers_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                }
+
+
+                //cout << "print position " << count_position << endl;
+
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(particles)[i] += vdouble2(sin(random_angle[2]),
+                                                            cos(random_angle[2])); // update if nothing is in the next position
+                    get<direction>(particles)[i] = (sin(random_angle[2]),
+                                                            cos(random_angle[2]));
+                }
+
+            }
+                //cout << "stops here " << endl;
+                // if first direction greater, second smaller
+                //absolute
+            else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
+
+                //relative
+                //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
+
+                x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
+                //cout << "print id " << id_[x] << endl;
+
+
+                //cout << "Position "<< x << endl;
+                int count_position = 0;
+                bool free_position = true; // check if the neighbouring position is free
+
+                // if this loop is entered, it means that there is another cell where I want to move
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    particle_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+
+                //cout << "print position " << count_position << endl;
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
+                                                            cos(random_angle[0])); // update if nothing is in the next position
+                    get<direction>(particles)[i] = (sin(random_angle[2]),
+                            cos(random_angle[2]));
+                }
+
+            }
+                // if first smaller, second bigger
+
+                //absolute
+            else if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo > diff_conc){
+
+                //relative
+                //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
+
+
+
+                x += vdouble2(sin(random_angle[1]), cos(random_angle[1]));
+                //cout << "print id " << id_[x] << endl;
+
+
+                //cout << "Position "<< x << endl;
+                int count_position = 0;
+                bool free_position = true; // check if the neighbouring position is free
+
+                // if this loop is entered, it means that there is another cell where I want to move
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    particle_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+
+                //cout << "print position " << count_position << endl;
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
+                                                            cos(random_angle[1])); // update if nothing is in the next position
+                    get<direction>(particles)[i] = (sin(random_angle[2]),
+                            cos(random_angle[2]));
+                }
+                break;
+            }
+                // if both greater choose the bigger one
+
+                // absolute
+            else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo > diff_conc){
+
+                //relative
+                //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
+
+
+                // if first is greater than the second
+                if (new_chemo_1 > new_chemo_2) {
+                    x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
+                    //cout << "print id " << id_[x] << endl;
 
 
                     //cout << "Position "<< x << endl;
@@ -544,172 +733,307 @@ int main() {
                     bool free_position = true; // check if the neighbouring position is free
 
                     // if this loop is entered, it means that there is another cell where I want to move
-                    for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+                    for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
 
                         count_position += 1; // just to check if this works
                         particle_type::const_reference b = std::get<0>(k);
-                        const vdouble2& dx = std::get<1>(k);
+                        const vdouble2 &dx = std::get<1>(k);
                         //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                        //cout << "id of b " << get<id>(b) << endl;
-
-                        if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+                        //for (int i=0; i < particles.size(); i++) {
+                        if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                             //cout << "reject step " << 1 << endl;
-                            free_position = false;}
-
-                    }
-
-                    for (const auto& k: euclidean_search(followers.get_query(),x,diameter)) {
-
-                        count_position += 1; // just to check if this works
-                        particle_type::const_reference b = std::get<0>(k);
-                        const vdouble2& dx = std::get<1>(k);
-                        //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
-
-                        //cout << "id of b " << get<id>(b) << endl;
-
-                        if (get<id>(b) != get<id>(followers[i])){ // check if it is not the same particle
-                            //cout << "reject step " << 1 << endl;
-                            free_position = false;}
-
-                    }
-
-                    // if there are no cells at that position and it is in the domain, move that cell
-                    if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y-1){
-                        get<position>(particles)[i] += vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
-                    }
-
-
-                    // move all the follower cells attached to that cell the same direction
-                    // go through all the followers
-                    for (int j=0; j<followers.size(); j++){
-                        if (get<type>(followers)[j] == 10*get<type>(particles)[i]) {
-                            get<position>(followers)[j] += vdouble2(sin(random_angle), cos(random_angle));
+                            free_position = false;
                         }
+                        //}
+
+                        //break;
+                    }
+                    //cout << "print position " << count_position << endl;
+                    // check that the position they want to move to is free and not out of bounds
+                    if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                        round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                        round(x[1]) < length_y - 1) {
+                        get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
+                                                                cos(random_angle[0])); // update if nothing is in the next position
+                        get<direction>(particles)[i] = (sin(random_angle[2]),
+                                cos(random_angle[2]));
                     }
 
-
-                }// update the position
-                //else{cout << "rejected" << endl;}
-            } //check if not outside the domain
-
-
-
-        }// go through all the particles
-
-        /*
-         * go through all the followers, actually here will only move detached ones randomly
-         *
-         */
-
-        for (int i=0; i < followers.size(); i++) {
+                }
+                    // if second is greater than the first
+                else if (new_chemo_1 < new_chemo_2) {
+                    x += vdouble2(sin(random_angle[1]), cos(random_angle[1]));
+                    //cout << "print id " << id_[x] << endl;
 
 
-            if (get<type>(followers)[i] == 0 ) {
+                    //cout << "Position "<< x << endl;
+                    int count_position = 0;
+                    bool free_position = true; // check if the neighbouring position is free
 
-                vdouble2 x;
-                x = get<position>(followers[i]);
+                    // if this loop is entered, it means that there is another cell where I want to move
+                    for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
 
-                // variable to choose a random angle
-                double random_angle;
+                        count_position += 1; // just to check if this works
+                        particle_type::const_reference b = std::get<0>(k);
+                        const vdouble2 &dx = std::get<1>(k);
+                        //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                        //for (int i=0; i < particles.size(); i++) {
+                        if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                            //cout << "reject step " << 1 << endl;
+                            free_position = false;
+                        }
+                        //}
+
+                        //break;
+                    }
+
+                    //cout << "print position " << count_position << endl;
+                    // check that the position they want to move to is free and not out of bounds
+                    if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                        round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                        round(x[1]) < length_y - 1) {
+                        get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
+                                                                cos(random_angle[1])); // update if nothing is in the next position
+                        get<direction>(particles)[i] = (sin(random_angle[2]),
+                                cos(random_angle[2]));
+                    }
+                }
+            }
+        }// go through all the particles-leaders
+
+
+        for (int i = 0; i < followers.size(); i++) {
+
+            vdouble2 x;
+            x = get<position>(followers[i]);
+
+            // take the direction of the leader it is attached to
+
+            if (get<attached_to_type>(followers)[i] == 2) {
+
+                int id_lead = get<attached_to_id>(followers)[i]; // id of the leader it is attached to
+
+                vdouble2 direction_cur; // current direction of a cell
+
+                //access the direction of the particle it is attached to
+                for (int i = 0; i < particles.size(); i++) {
+                    if (get<id>(particles)[i] == id_lead) {
+                        direction_cur = get<direction>(particles)[i];
+                    }
+                }
+
+                // temporarily update the position
+
+                x += direction_cur;
+
+                // now check if there is no other particle/follower in the other position
+                // check if it is not out of bounds
+                int count_position = 0;
+                bool free_position = true; // check if the neighbouring position is free
+
+                // if this loop is entered, it means that there is another cell where I want to move
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    particle_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+                for (const auto &k: euclidean_search(followers.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    followers_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+
+                //cout << "print position " << count_position << endl;
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(particles)[i] += direction_cur; // update if nothing is in the next position
+                    get<direction>(particles)[i] = direction_cur;
+                }
+
+            }
+
+            else if (get<attached_to_type>(followers)[i] == 1) {
+
+                int id_fol = get<attached_to_id>(followers)[i]; // id of the follower it is attached to
+
+                vdouble2 direction_cur; // current direction of a cell
+
+                //access the direction of the follower it is attached to
+                for (int i = 0; i < followers.size(); i++) {
+                    if (get<id>(followers)[i] == id_fol) {
+                        direction_cur = get<direction>(followers)[i];
+                    }
+                }
+
+                // temporarily update the position
+
+                x += direction_cur;
+
+                // now check if there is no other particle/follower in the other position
+                // check if it is not out of bounds
+                int count_position = 0;
+                bool free_position = true; // check if the neighbouring position is free
+
+                // if this loop is entered, it means that there is another cell where I want to move
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    particle_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+                for (const auto &k: euclidean_search(followers.get_query(), x, diameter)) {
+
+                    count_position += 1; // just to check if this works
+                    followers_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
+                    //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
+
+
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
+                        //cout << "reject step " << 1 << endl;
+                        free_position = false;
+                    }
+                    //}
+
+                    //break;
+                }
+
+
+                //cout << "print position " << count_position << endl;
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(particles)[i] += direction_cur; // update if nothing is in the next position
+                    get<direction>(particles)[i] = direction_cur;
+                }
+
+            }
+
+                // if the cell is not attached to anything, choose a random direction
+            else {
+
+
+                double random_angle = uniformpi(gen1);
                 int sign_x, sign_y;
 
-                // choose a random angle
-                random_angle = uniformpi(gen1);
+                while (round((x[0] * (length_x / domain_length) + sin(random_angle) + sign_x * l_filo)) < 0 ||
+                       round((x[0] * (length_x / domain_length) + sin(random_angle) + sign_x * l_filo)) >
+                       length_x - 1 || round(x[1] + cos(random_angle) + sign_y * l_filo) < 0 ||
+                       round(x[1] + cos(random_angle) + sign_y * l_filo) > length_y - 1) {
+                    random_angle = uniformpi(gen1);
 
-                // make sure that I choose the right direction when taking into account cell radius
+                    if (sin(random_angle) < 0) {
+                        sign_x = -1;
+                    } else { sign_x = 1; }
 
+                    if (cos(random_angle) < 0) {
+                        sign_y = -1;
+                    } else { sign_y = 1; }
 
-                    while (round((x[0] * (length_x/domain_length)+sin(random_angle)+sign_x*l_filo) ) < 0 || round((x[0] * (length_x/domain_length)+sin(random_angle)+sign_x*l_filo)) > length_x-1 || round(x[1]+ cos(random_angle)+sign_y*l_filo) < 0 || round(x[1]+ cos(random_angle)+sign_y*l_filo) > length_y-1 ){
-                        random_angle = uniformpi(gen1);
+                }
 
-                        if(sin(random_angle)<0){
-                            sign_x=-1;
-                        }else{sign_x=1;}
-
-                        if(cos(random_angle)<0){
-                            sign_y=-1;
-                        }else{sign_y=1;}
-
-                    }
-
-                // check that the position they want to move to is free and not out of bounds
+                x += vdouble2(sin(random_angle), cos(random_angle));
 
                 int count_position = 0;
                 bool free_position = true; // check if the neighbouring position is free
 
                 // if this loop is entered, it means that there is another cell where I want to move
-                for (const auto& k: euclidean_search(particles.get_query(),x,diameter)) {
+                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
 
                     count_position += 1; // just to check if this works
                     particle_type::const_reference b = std::get<0>(k);
-                    const vdouble2& dx = std::get<1>(k);
+                    const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                     //cout << "id of b " << get<id>(b) << endl;
-
-                    if (get<id>(b) != get<id>(particles[i])){ // check if it is not the same particle
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
-                        free_position = false;}
-
+                        free_position = false;
+                    }
                 }
 
-
-                // if this loop is entered, it means that there is another cell where I want to move
-                for (const auto& k: euclidean_search(followers.get_query(),x,diameter)) {
+                for (const auto &k: euclidean_search(followers.get_query(), x, diameter)) {
 
                     count_position += 1; // just to check if this works
-                    particle_type::const_reference b = std::get<0>(k);
-                    const vdouble2& dx = std::get<1>(k);
+                    followers_type::const_reference b = std::get<0>(k);
+                    const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                    //cout << "id of b " << get<id>(b) << endl;
 
-                    if (get<id>(b) != get<id>(followers[i])){ // check if it is not the same particle
+                    //for (int i=0; i < particles.size(); i++) {
+                    if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
-                        free_position = false;}
-
+                        free_position = false;
+                    }
                 }
 
-                if (free_position == true && round((x[0] * (length_x/domain_length)) ) > 0 && round((x[0] * (length_x/domain_length)))< length_x-1 && round(x[1]) > 0 && round(x[1]) < length_y -1 ){
-                    get<position>(followers)[i] += vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
+
+                //cout << "print position " << count_position << endl;
+
+                // check that the position they want to move to is free and not out of bounds
+                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                    round(x[1]) < length_y - 1) {
+                    get<position>(followers)[i] += vdouble2(sin(random_angle),
+                                                            cos(random_angle)); // update if nothing is in the next position
                 }
             }
+
+
         }
 
 
-
-
-
-
-
-        //particles.update_positions();
-        // save particles after they move
-        /*
-     * on every i/o step write particle container to a vtk
-     * unstructured grid file
-     */
-        //cout << "." << flush;
-#ifdef HAVE_VTK
-        vtkWriteGrid("particles",t,particles.get_grid(true));
-#endif
-#ifdef HAVE_VTK
-        vtkWriteGrid("followers",t,followers.get_grid(true));
-#endif
-
-        //for (int i =0;i<5;++i){cout << "koks rezas " << i <<endl;}
-        //length_x_change = new_length_x_change;
-        //cout << "new length " << new_length_x_change << endl;
-    }//all time steps
-
- /*   for (int i=0; i < particles.size(); i++) {
-        cout << "Positions = " << get<position>(particles[i]) << "\n";
+    #ifdef HAVE_VTK
+            vtkWriteGrid("particles",t,particles.get_grid(true));
+    #endif
+    #ifdef HAVE_VTK
+            vtkWriteGrid("followers",t,followers.get_grid(true));
+    #endif
     }
-
-    for (int i=0; i < followers.size(); i++) {
-        cout << "Positions = " << get<position>(followers[i]) << "\n";
-    }
- */
 
 
 }

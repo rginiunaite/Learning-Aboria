@@ -35,7 +35,7 @@ int main() {
     double l_filo = 27.5 / 10;//2; // sensing radius
     double diff_conc = 0.5; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
-    int insertion_freq = 1;
+    int insertion_freq = 5;
 
     // domain growth parameters
 
@@ -210,6 +210,7 @@ int main() {
             /*
              * loop over all neighbouring particles within "dem_diameter" distance
              */
+            //particle_type::value_type closest_neighbour;
             for (auto tpl: euclidean_search(particles.get_query(), get<position>(p), diameter)) {
                 /*
                  * tpl variable is a tuple containing:
@@ -219,11 +220,15 @@ int main() {
                  */
                 const vdouble2 &dx = std::get<1>(tpl);
                 const particle_type::value_type &j = std::get<0>(tpl);
+                cout << "position from j " << get<id>(j) << endl;
+                //closest_neighbour = j;
                 if (dx.norm() < diameter) {
                     free_position = false;
                     break;
                 }
+
             }
+            //cout << "position from j " << get<id>(closest_neighbour) << endl;
             if (free_position == true) {
                 particles.push_back(p);
             }
@@ -325,8 +330,8 @@ int main() {
         // form a matrix which would store x,y,z, y -same as before
 
 
-        cout << "old length " << old_length << endl;
-        cout << "domain length " << domain_length << endl;
+        //cout << "old length " << old_length << endl;
+        //cout << "domain length " << domain_length << endl;
         // x column
         for (int i = 0; i < length_x * length_y; i++) {
             chemo_3col(i, 0) = chemo_3col_ind(i, 0) * (domain_length / length_x);
@@ -452,15 +457,12 @@ int main() {
                     const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                    cout << "id of b " << get<id>(b) << endl;
+                    //cout << "id of b " << get<id>(b) << endl;
                     //for (int i=0; i < particles.size(); i++) {
                     if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
                         free_position = false;
                     }
-                    //}
-
-                    //break;
                 }
 
 
@@ -499,7 +501,7 @@ int main() {
                     const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                    cout << "id of b " << get<id>(b) << endl;
+                    //cout << "id of b " << get<id>(b) << endl;
                     //for (int i=0; i < particles.size(); i++) {
                     if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
@@ -547,7 +549,7 @@ int main() {
                     const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                    cout << "id of b " << get<id>(b) << endl;
+                    //cout << "id of b " << get<id>(b) << endl;
                     //for (int i=0; i < particles.size(); i++) {
                     if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
@@ -596,7 +598,7 @@ int main() {
                         const vdouble2 &dx = std::get<1>(k);
                         //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                        cout << "id of b " << get<id>(b) << endl;
+                        //cout << "id of b " << get<id>(b) << endl;
                         //for (int i=0; i < particles.size(); i++) {
                         if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                             //cout << "reject step " << 1 << endl;
@@ -634,7 +636,7 @@ int main() {
                         const vdouble2 &dx = std::get<1>(k);
                         //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
-                        cout << "id of b " << get<id>(b) << endl;
+                        //cout << "id of b " << get<id>(b) << endl;
                         //for (int i=0; i < particles.size(); i++) {
                         if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
                             //cout << "reject step " << 1 << endl;
