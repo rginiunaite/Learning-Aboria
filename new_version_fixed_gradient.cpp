@@ -38,6 +38,8 @@ double func(double diff_conc, double slope) {
     //double diff_conc = 0.5; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
     int insertion_freq = 1;
+    double speed_l = 1; // speed of a leader cell
+    double speed_f = 1; // speed of a follower cell
 
     // domain growth parameters
 
@@ -90,9 +92,8 @@ double func(double diff_conc, double slope) {
     // four columns for x, y, z, u (z is necessaty for paraview)
 
     // form a matrix which would store x,y,z,u
+    MatrixXf chemo_3col(length_x*length_y,4), chemo_3col_ind(length_x*length_y,2); // need for because that is how paraview accepts data, third dimension is just zeros
 
-    MatrixXf chemo_3col(length_x * length_y, 4), chemo_3col_ind(length_x * length_y,
-                                                                2); // need for because that is how paraview accepts data, third dimension is just zeros
 
     // x, y coord, 1st and 2nd columns respectively
     int k = 0;
@@ -134,7 +135,6 @@ double func(double diff_conc, double slope) {
         output << "\n" << endl;
     }
 
-
     /*
      * 2D domain with a few randomly placed particles
      */
@@ -157,7 +157,7 @@ double func(double diff_conc, double slope) {
          * periodic in x and y
          */
 
-    particles.init_neighbour_search(vdouble2(0, 0), vdouble2(length_x, length_y), vbool2(false, false));
+    particles.init_neighbour_search(vdouble2(0, 0), vdouble2(5*length_x, length_y), vbool2(false, false));
 
     for (int i = 0; i < N; ++i) {
         bool free_position = false;
@@ -421,7 +421,7 @@ double func(double diff_conc, double slope) {
                 if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
-                    get<position>(particles)[i] += vdouble2(sin(random_angle[2]),
+                    get<position>(particles)[i] += speed_l *vdouble2(sin(random_angle[2]),
                                                             cos(random_angle[2])); // update if nothing is in the next position
                 }
 
@@ -467,7 +467,7 @@ double func(double diff_conc, double slope) {
                 if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
-                    get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
+                    get<position>(particles)[i] += speed_l * vdouble2(sin(random_angle[0]),
                                                             cos(random_angle[0])); // update if nothing is in the next position
                 }
 
@@ -515,7 +515,7 @@ double func(double diff_conc, double slope) {
                 if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
-                    get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
+                    get<position>(particles)[i] += speed_l * vdouble2(sin(random_angle[1]),
                                                             cos(random_angle[1])); // update if nothing is in the next position
                 }
                 break;
@@ -562,7 +562,7 @@ double func(double diff_conc, double slope) {
                     if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                         round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                         round(x[1]) < length_y - 1) {
-                        get<position>(particles)[i] += vdouble2(sin(random_angle[0]),
+                        get<position>(particles)[i] += speed_l * vdouble2(sin(random_angle[0]),
                                                                 cos(random_angle[0])); // update if nothing is in the next position
                     }
 
@@ -601,7 +601,7 @@ double func(double diff_conc, double slope) {
                     if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
                         round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                         round(x[1]) < length_y - 1) {
-                        get<position>(particles)[i] += vdouble2(sin(random_angle[1]),
+                        get<position>(particles)[i] += speed_l * vdouble2(sin(random_angle[1]),
                                                                 cos(random_angle[1])); // update if nothing is in the next position
                     }
 
@@ -625,7 +625,7 @@ double func(double diff_conc, double slope) {
 
         }// go through all the particles
 
-
+        particles.update_positions();
 
         //particles.update_positions();
         // save particles after they move
@@ -651,7 +651,7 @@ double func(double diff_conc, double slope) {
     // count the number of particles that are at the last 10% of the domain
 
 
-    double last_10_domain = domain_length - domain_length/2.0;
+    double last_10_domain = domain_length - domain_length/3.0;
     cout << "last 10 percent " << last_10_domain << endl;
     int number_of_cells = 0; // number of cells in the last 10% of the domain
 
@@ -673,59 +673,86 @@ double func(double diff_conc, double slope) {
 // parameter analysis
 int main(){
 
-
-
-    const int number_parameters = 2; // parameter range
+    const int number_parameters = 20; // parameter range
 
     // define parameters that I will change
     //VectorXf slope, threshold;
     array<double, number_parameters> slope, threshold;
     //array<double,number_parameters,number_parameters>;
 
-    MatrixXf density(number_parameters, number_parameters);
+    MatrixXf density(number_parameters,number_parameters); // need for because that is how paraview accepts data, third dimension is just zeros
 
 
 
     for (int i=0; i<number_parameters; i++){
 
-        slope[i] = 0.1;//0.1;
-        threshold[i] = 0.01;// 0.01;
+        slope[i] = 0.1*(i+1);//0.1;
+        threshold[i] = 0.01*(i+1);// 0.01;
         cout << "slope " << slope[i] << endl;
 
     }
-
-
-    // save data to plot chemoattractant concentration
-    ofstream output("density_matrix.csv");
-
-    output << "x, y, z, u" << "\n" << endl;
-
-
-    cout << "function value " << func(1,0.05) << endl;
-    for (int i =0; i<20;i++){
-        //remove( "particles00" + to_char(i) + ".vtu" );
-    }
-    remove("matrix_growing_domain*.csv");
-    //cout << "function value " << func(1,0.05) << endl;
-    //remove( "particles*.csv" );
-    //remove("matrix_growing_domain*.csv");
-    //cout << "function value " << func(1,0.05) << endl;
-    //cout << "function value " << func(1,0.05) << endl;
-
 
 
     for (int i = 0; i < number_parameters; i++){
 
         for (int j = 0; j < number_parameters; j++){
 
-            //density(i,j) = func(slope[i],threshold[j]);
-            cout << "density" << density(i,j) << endl;
+            density(i,j) = func(slope[i],threshold[j]);
+            cout << "density " << density(i,j) << endl;
 
         }
 
     }
 
+    // save data to plot chemoattractant concentration
+    ofstream output("density_matrix.csv");
 
+    MatrixXf density_3col(number_parameters * number_parameters, 4), density_3col_ind(number_parameters * number_parameters,
+                                                                2); // need for because that is how paraview accepts data, third dimension is just zeros
+
+
+
+    // x, y coord, 1st and 2nd columns respectively
+    int k = 0;
+    // it has to be 3D for paraview
+    while (k < number_parameters * number_parameters) {
+        for (int i = 0; i < number_parameters; i++) {
+            for (int j = 0; j < number_parameters; j++) {
+                density_3col_ind(k, 0) = i;
+                density_3col_ind(k, 1) = j;
+                density_3col(k, 2) = 0;
+                k += 1;
+            }
+        }
+    }
+
+
+    // y and x (initially) column
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        density_3col(i, 1) = density_3col_ind(i, 1);
+        density_3col(i, 0) = density_3col_ind(i, 0);
+    }
+
+
+    // u column
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        density_3col(i, 3) = density(density_3col_ind(i, 0), density_3col_ind(i, 1));
+    }
+
+    output << "x, y, z, u" << "\n" << endl;
+
+
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        for (int j = 0; j < 4; j++) {
+            output << density_3col(i, j) << ", ";
+        }
+        output << "\n" << endl;
+    }
+
+
+
+    /*
+     * This might be useful for matlab
     for (int i = 0; i < number_parameters; i++){
 
         for (int j = 0; j < number_parameters; j++){
@@ -735,5 +762,6 @@ int main(){
         }
         output << "\n" << endl;
     }
+    */
 
 }
