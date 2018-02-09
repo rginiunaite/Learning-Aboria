@@ -48,7 +48,9 @@ include_directories(src ${INCLUDES})
 #add_executable(full_dynamics_multiple_direction full_dynamics_multiple_direction.cpp)
 #add_executable(leaders_followers leaders_followers.cpp)
 #add_executable(old_multiple_direction old_multiple_direction.cpp)
-add_executable(chemical_trail_leaders_followers chemical_trail_leaders_followers.cpp )
+#add_executable(chemical_trail_leaders_followers chemical_trail_leaders_followers.cpp)
+#add_executable(new_version_fixed_gradient new_version_fixed_gradient.cpp)
+add_executable(no_cells no_cells.cpp)
 
 
 #target_link_libraries(fixed_gradient ${LIBRARIES})
@@ -66,4 +68,6 @@ add_executable(chemical_trail_leaders_followers chemical_trail_leaders_followers
 #target_link_libraries(full_dynamics_multiple_direction ${LIBRARIES})
 #target_link_libraries(leaders_followers ${LIBRARIES})
 #target_link_libraries(old_multiple_direction ${LIBRARIES})
-target_link_libraries(chemical_trail_leaders_followers ${LIBRARIES})
+#target_link_libraries(chemical_trail_leaders_followers ${LIBRARIES})
+#target_link_libraries(new_version_fixed_gradient ${LIBRARIES})
+target_link_libraries(no_cells ${LIBRARIES})

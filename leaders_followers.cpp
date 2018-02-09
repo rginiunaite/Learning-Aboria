@@ -955,7 +955,6 @@ int main() {
                 get<attached_to_id>(followers[i]) = get<id>(closest_neighbour); // the id of a leader
                 get<attached_to_type>(followers[i]) = 2; // attached to a leader
                 get<chain>(followers[i]) = 1;
-                cout << "cia irgi niekada?????????????????" << endl;
             }
             else if (distance > distance_follower && distance_follower != 0){
                 get<attached_to_id>(followers[i]) = get<id>(closest_neighbour_follower); // the id of a leader

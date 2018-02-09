@@ -37,9 +37,12 @@ double func(double diff_conc, double slope) {
     double l_filo = 27.5 / 10;//2; // sensing radius
     //double diff_conc = 0.5; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
-    int insertion_freq = 1;
+    int insertion_freq = 201;
     double speed_l = 1; // speed of a leader cell
     double speed_f = 1; // speed of a follower cell
+
+    double domain_fraction = 0.5; // fraction of the end of the domain that we count the percentage of cells in
+
 
     // domain growth parameters
 
@@ -200,7 +203,7 @@ double func(double diff_conc, double slope) {
 
     for (int t = 0; t < N_steps; t++) {
         // insert new cells at the start of the domain at insertion time (have to think about this insertion time)
-        cout << "does not enter here" << endl;
+
         if (t % insertion_freq == 0) {
             bool free_position = false;
             particle_type::value_type p;
@@ -221,7 +224,7 @@ double func(double diff_conc, double slope) {
                  */
                 const vdouble2 &dx = std::get<1>(tpl);
                 const particle_type::value_type &j = std::get<0>(tpl);
-                cout << "position from j " << get<id>(j) << endl;
+                //cout << "position from j " << get<id>(j) << endl;
                 //closest_neighbour = j;
                 if (dx.norm() < diameter) {
                     free_position = false;
@@ -388,7 +391,7 @@ double func(double diff_conc, double slope) {
 
 
                 // relative
-                if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
+               // if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[2]), cos(random_angle[2]));
                 //cout << "print id " << id_[x] << endl;
@@ -425,13 +428,14 @@ double func(double diff_conc, double slope) {
                                                             cos(random_angle[2])); // update if nothing is in the next position
                 }
 
-            }
+           // }
                 //cout << "stops here " << endl;
                 // if first direction greater, second smaller
                 //absolute
             //else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
 
                 //relative
+                /*
                 else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
@@ -610,7 +614,7 @@ double func(double diff_conc, double slope) {
 
             }
 
-
+            */
 
             //cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
             //cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;
@@ -643,15 +647,15 @@ double func(double diff_conc, double slope) {
         //cout << "new length " << new_length_x_change << endl;
     }//all time steps
 
-    for (int i = 0; i < particles.size(); i++) {
+    /*for (int i = 0; i < particles.size(); i++) {
         cout << "Positions = " << get<position>(particles[i]) << "\n";
     }
-
+    */
 
     // count the number of particles that are at the last 10% of the domain
 
-
-    double last_10_domain = domain_length - domain_length/3.0;
+    /*
+    double last_10_domain = domain_length - domain_length*domain_fraction;
     cout << "last 10 percent " << last_10_domain << endl;
     int number_of_cells = 0; // number of cells in the last 10% of the domain
 
@@ -667,13 +671,31 @@ double func(double diff_conc, double slope) {
     cout << "proportion of cells " << proportion_cells_last << endl;
 
     return proportion_cells_last;
+    */
+
+    // return the furthest distance travelled by the cells
+    double furthest_distance = 0 ;
+    vdouble2 dist; // variable for positions
+
+    for (int i = 0; i < particles.size(); i++) {
+
+        dist = get<position>(particles[i]);
+
+        if (furthest_distance < dist[0]){
+            furthest_distance = dist[0];
+        }
+
+    }
+
+    return furthest_distance;
+
 }
 
 
 // parameter analysis
 int main(){
 
-    const int number_parameters = 20; // parameter range
+    const int number_parameters = 50; // parameter range
 
     // define parameters that I will change
     //VectorXf slope, threshold;
@@ -687,8 +709,8 @@ int main(){
     for (int i=0; i<number_parameters; i++){
 
         slope[i] = 0.1*(i+1);//0.1;
-        threshold[i] = 0.01*(i+1);// 0.01;
-        cout << "slope " << slope[i] << endl;
+        threshold[i] = 0.05*(i+1);// 0.01;
+        //cout << "slope " << slope[i] << endl;
 
     }
 
@@ -697,12 +719,13 @@ int main(){
 
         for (int j = 0; j < number_parameters; j++){
 
-            density(i,j) = func(slope[i],threshold[j]);
-            cout << "density " << density(i,j) << endl;
+            density(i,j) = func(threshold[i],slope[j]);
+            cout << "number of parameters investigated " << i << endl;
 
         }
 
     }
+
 
     // save data to plot chemoattractant concentration
     ofstream output("density_matrix.csv");
@@ -750,18 +773,18 @@ int main(){
     }
 
 
+    // This might be useful for matlab
+    ofstream output2("density_matrix_matlab.csv");
 
-    /*
-     * This might be useful for matlab
     for (int i = 0; i < number_parameters; i++){
 
         for (int j = 0; j < number_parameters; j++){
 
-            output << density(i,j) << " ";
-            cout << "density" << density(i,j) << endl;
+            output2 << density(i,j) << ", ";
+
         }
-        output << "\n" << endl;
+        output2 << "\n" << endl;
     }
-    */
+
 
 }

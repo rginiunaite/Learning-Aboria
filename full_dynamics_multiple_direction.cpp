@@ -17,7 +17,7 @@ using namespace std;
 using namespace Aboria;
 using namespace Eigen; // objects VectorXf, MatrixXf
 
-int main() {
+double func(double diff_conc, double lam) {
 
 
     // model parameters
@@ -27,18 +27,19 @@ int main() {
     double domain_length = 30; //this variable is for the actual domain length
     double old_length = 30;// this is important for the update of the positions
     const int length_y = 12;//120;//20;//4;
-    const double diameter =
-            (2 * 7.5) / 10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
+    const double diameter = (2 * 7.5) / 10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     double cell_radius = (7.5) / 10;//0.5; // radius of a cell
-    int N_steps = 100; // number of times the cells move up the gradient
+    int N_steps = 200; // number of times the cells move up the gradient
     const size_t N = 4; // initial number of cells
     double l_filo = 27.5 / 10;//2; // sensing radius
-    double diff_conc = 0.5; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
+    //double diff_conc = 0.5; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
-    int insertion_freq = 5;
+    int insertion_freq = 201;
+    double speed_l = 1; // speed of a leader cell
+    double speed_f = 1; // speed of a follower cell
 
-    // domain growth parameters
 
+    double domain_fraction = 0.5; // fraction of the end of the domain that we count the percentage of cells in
 
     /*
     double L_0 = initial_domain_length;//300;
@@ -58,7 +59,7 @@ int main() {
 
     // parameters for the dynamics of chemoattractant concentration
 
-    double D = 1 / 10; // to 10^5 \nu m^2/h diffusion coefficient
+    double D = 1 / 1; // to 10^5 \nu m^2/h diffusion coefficient
     double t = 0; // initialise time, redundant
     double dt = 0.1 / 10; // time step
     int dx = 1; // space step in x direction
@@ -68,8 +69,8 @@ int main() {
 
     // parameters for internalisation
 
-    double R = 7.5 / 10; // \nu m cell radius
-    int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
+    double R = cell_radius; // \nu m cell radius
+    //int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
     // matrix that stores the values of concentration of chemoattractant
     MatrixXf chemo(length_x, length_y), chemo_new(length_x, length_y);
@@ -84,7 +85,6 @@ int main() {
             chemo_new(i, j) = 1; // this is for later updates
         }
     }
-
 
     // four columns for x, y, z, u (z is necessaty for paraview)
 
@@ -156,7 +156,7 @@ int main() {
          * periodic in x and y
          */
 
-    particles.init_neighbour_search(vdouble2(0, 0), vdouble2(length_x, length_y), vbool2(false, false));
+    particles.init_neighbour_search(vdouble2(0, 0), 5*vdouble2(length_x, length_y), vbool2(false, false));
 
     for (int i = 0; i < N; ++i) {
         bool free_position = false;
@@ -220,7 +220,7 @@ int main() {
                  */
                 const vdouble2 &dx = std::get<1>(tpl);
                 const particle_type::value_type &j = std::get<0>(tpl);
-                cout << "position from j " << get<id>(j) << endl;
+                //cout << "position from j " << get<id>(j) << endl;
                 //closest_neighbour = j;
                 if (dx.norm() < diameter) {
                     free_position = false;
@@ -435,11 +435,11 @@ int main() {
 
             //if both smaller, move random direction
             //absolute
-            if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
+            //if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
 
 
             // relative
-            //if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
+            if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[2]), cos(random_angle[2]));
                 //cout << "print id " << id_[x] << endl;
@@ -480,10 +480,10 @@ int main() {
                 //cout << "stops here " << endl;
                 // if first direction greater, second smaller
                 //absolute
-            else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
+            //else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
 
                 //relative
-            //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
+            else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
                 //cout << "print id " << id_[x] << endl;
@@ -526,10 +526,10 @@ int main() {
                 // if first smaller, second bigger
 
             //absolute
-            else if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo > diff_conc){
+            //else if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo > diff_conc){
 
             //relative
-            //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
+            else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
 
 
 
@@ -574,10 +574,10 @@ int main() {
                 // if both greater choose the bigger one
 
             // absolute
-            else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo > diff_conc){
+            //else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo > diff_conc){
 
                 //relative
-            //else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
+            else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) > diff_conc){
 
 
                 // if first is greater than the second
@@ -676,9 +676,8 @@ int main() {
 
         }// go through all the particles
 
+        particles.update_positions();
 
-
-        //particles.update_positions();
         // save particles after they move
         /*
      * on every i/o step write particle container to a vtk
@@ -697,6 +696,145 @@ int main() {
     for (int i = 0; i < particles.size(); i++) {
         cout << "Positions = " << get<position>(particles[i]) << "\n";
     }
+
+// count the number of particles that are at the last 10% of the domain
+
+    /*
+    double last_10_domain = domain_length - domain_length*domain_fraction;
+    cout << "last 10 percent " << last_10_domain << endl;
+    int number_of_cells = 0; // number of cells in the last 10% of the domain
+
+    for (int p =0; p< particles.size(); p++){
+        vdouble2 x = get<position>(particles[p]);
+        if(x[0] > last_10_domain )
+            number_of_cells += 1;
+    }
+
+
+    double proportion_cells_last = double(number_of_cells)/double(particles.size());
+
+    cout << "proportion of cells " << proportion_cells_last << endl;
+
+    return proportion_cells_last;
+    */
+
+    // return the furthest distance travelled by the cells
+    double furthest_distance = 0 ;
+    vdouble2 dist; // variable for positions
+
+    for (int i = 0; i < particles.size(); i++) {
+
+        dist = get<position>(particles[i]);
+
+        if (furthest_distance < dist[0]){
+            furthest_distance = dist[0];
+        }
+
+    }
+
+    return furthest_distance;
+
+}
+
+
+int main(){
+
+    const int number_parameters = 1; // parameter range
+
+    // define parameters that I will change
+    //VectorXf slope, threshold;
+    array<double, number_parameters> lam, threshold;
+    //array<double,number_parameters,number_parameters>;
+
+    MatrixXf density(number_parameters,number_parameters); // need for because that is how paraview accepts data, third dimension is just zeros
+
+
+
+    for (int i=0; i<number_parameters; i++){
+
+        lam[i] = 500;//*(i+1);//0.1;
+        //threshold[i] = 0.5;//0.01*(i+1);// 0.01;
+        threshold[i] = 1*(i+1);// 0.01;
+
+
+    }
+
+
+    for (int i = 0; i < number_parameters; i++){
+
+        for (int j = 0; j < number_parameters; j++){
+
+            density(i,j) = func(threshold[j],lam[i]);
+            cout << "number of i " << i << endl;
+
+        }
+
+    }
+
+
+    // save data to plot chemoattractant concentration
+    ofstream output("density_matrix_cell_induced.csv");
+
+    MatrixXf density_3col(number_parameters * number_parameters, 4), density_3col_ind(number_parameters * number_parameters,
+                                                                2); // need for because that is how paraview accepts data, third dimension is just zeros
+
+
+
+    // x, y coord, 1st and 2nd columns respectively
+    int k = 0;
+    // it has to be 3D for paraview
+    while (k < number_parameters * number_parameters) {
+        for (int i = 0; i < number_parameters; i++) {
+            for (int j = 0; j < number_parameters; j++) {
+                density_3col_ind(k, 0) = i;
+                density_3col_ind(k, 1) = j;
+                density_3col(k, 2) = 0;
+                k += 1;
+            }
+        }
+    }
+
+
+    // y and x (initially) column
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        density_3col(i, 1) = density_3col_ind(i, 1);
+        density_3col(i, 0) = density_3col_ind(i, 0);
+    }
+
+
+    // u column
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        density_3col(i, 3) = density(density_3col_ind(i, 0), density_3col_ind(i, 1));
+    }
+
+    output << "x, y, z, u" << "\n" << endl;
+
+
+    for (int i = 0; i < number_parameters * number_parameters; i++) {
+        for (int j = 0; j < 4; j++) {
+            output << density_3col(i, j) << ", ";
+        }
+        output << "\n" << endl;
+    }
+
+
+
+
+
+    // This might be useful for matlab
+    ofstream output2("density_matrix_matlab_cell_induced.csv");
+
+    for (int i = 0; i < number_parameters; i++){
+
+        for (int j = 0; j < number_parameters; j++){
+
+            output2 << density(i,j) << ", ";
+
+        }
+        output2 << "\n" << endl;
+    }
+
+
 
 
 }
