@@ -75,7 +75,7 @@ double func(double diff_conc, double slope) {
 
     // parameters for internalisation
 
-    double R = 7.5 / 10; // \nu m cell radius
+    double R = cell_radius; // \nu m cell radius
     int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
     // matrix that stores the values of concentration of chemoattractant
@@ -387,7 +387,7 @@ double func(double diff_conc, double slope) {
 
             //if both smaller, move random direction
             //absolute
-            //if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
+            /*if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
 
 
                 // relative
@@ -428,15 +428,15 @@ double func(double diff_conc, double slope) {
                                                             cos(random_angle[2])); // update if nothing is in the next position
                 }
 
-           // }
+            }*/
                 //cout << "stops here " << endl;
                 // if first direction greater, second smaller
                 //absolute
             //else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
 
                 //relative
-                /*
-                else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
+
+                if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
                 //cout << "print id " << id_[x] << endl;
@@ -614,7 +614,7 @@ double func(double diff_conc, double slope) {
 
             }
 
-            */
+
 
             //cout << "sin of the angle " << sin(random_angle(rand_num_count)) << endl;
             //cout << "cos of the angle " << cos(random_angle(rand_num_count)) << endl;

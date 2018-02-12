@@ -124,24 +124,6 @@ int main() {
     }
 
 
-    // u column
-    for (int i=0;i<length_x*length_y;i++){
-        chemo_3col(i,3) = chemo(chemo_3col_ind(i,0),chemo_3col_ind(i,1));
-    }
-
-    // save data to plot chemoattractant concentration in MATLAB
-    ofstream output("matrix_3col.csv");
-
-    output << "x, y, z, u" << "\n" << endl;
-
-
-    for (int i=0;i<length_x*length_y;i++){
-        for(int j=0;j<4;j++){
-            output << chemo_3col(i,j) << ", ";
-        }
-        output << "\n" << endl;
-    }
-
 
     /*
      * 2D domain with a few randomly placed particles
@@ -240,7 +222,7 @@ int main() {
     }
 
     // save particles before they move
-    vtkWriteGrid("before",0,particles.get_grid(true));
+    vtkWriteGrid("followers",t,followers.get_grid(true));
     vtkWriteGrid("particles",t,particles.get_grid(true));
 
 
@@ -339,10 +321,22 @@ int main() {
         }
         //cout << "diff domain outside " << diff_domain << endl;
 
+
+
+
+        // save the chemoattractant concentration with properly rescaled coordinates
+        for (int i=0;i<length_x*length_y;i++){
+            chemo_3col(i,0) = chemo_3col_ind(i,0)*(domain_length/length_x);
+        }
+        //cout << "domain length ratio " << domain_length/length_x << endl;
+
+        // u column
+        for (int i=0;i<length_x*length_y;i++){
+            chemo_3col(i,3) = chemo(chemo_3col_ind(i,0),chemo_3col_ind(i,1));
+        }
+
+
         // update chemoattractant profile
-
-
-
 
         // internalisation
         for (int i =0;i<length_x;i++){
@@ -413,29 +407,6 @@ int main() {
 
 
 
-        /*
-            Rescale x coordinates properly
-        */
-
-
-        // three columns for x, y, z
-
-        // form a matrix which would store x,y,z, y -same as before
-
-
-        //cout << "old length " << old_length << endl;
-        //cout << "domain length " << domain_length << endl;
-        // x column
-        for (int i=0;i<length_x*length_y;i++){
-            chemo_3col(i,0) = chemo_3col_ind(i,0)*(domain_length/length_x);
-        }
-        //cout << "domain length ratio " << domain_length/length_x << endl;
-
-        // u column
-        for (int i=0;i<length_x*length_y;i++){
-            chemo_3col(i,3) = chemo(chemo_3col_ind(i,0),chemo_3col_ind(i,1));
-        }
-
         // save data to plot chemoattractant concentration
         ofstream output("matrix_growing_domain" + to_string(t) +".csv");
 
@@ -488,7 +459,7 @@ int main() {
             std::array<double, 3> random_angle;
             std::array<int, 3> sign_x;
             std::array<int, 3> sign_y;
-            for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
 
                 double random_angle_tem = uniformpi(gen1);
                 int sign_x_tem, sign_y_tem;
@@ -509,10 +480,10 @@ int main() {
 
                 }
 
-                random_angle[i] = random_angle_tem;
+                random_angle[j] = random_angle_tem;
 
-                sign_x[i] = sign_x_tem;
-                sign_y[i] = sign_y_tem;
+                sign_x[j] = sign_x_tem;
+                sign_y[j] = sign_y_tem;
 
 
             }
@@ -918,7 +889,13 @@ int main() {
                 //for (int i=0; i < particles.size(); i++) {
                 if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
                 //cout << "reject step " << 1 << endl;
-                free_position = true;
+                free_position = false;
+                }
+            }
+
+            if (get<id>(followers[i]) == 6){
+                if (free_position == false){
+                    cout << "free position false " << endl;
                 }
             }
 
@@ -1006,11 +983,11 @@ int main() {
 
 
 #ifdef HAVE_VTK
-            vtkWriteGrid("particles",t,particles.get_grid(true));
-    #endif
-    #ifdef HAVE_VTK
-            vtkWriteGrid("followers",t,followers.get_grid(true));
-    #endif
+        vtkWriteGrid("particles",t,particles.get_grid(true));
+#endif
+#ifdef HAVE_VTK
+        vtkWriteGrid("followers",t,followers.get_grid(true));
+#endif
     }
 
 

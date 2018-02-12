@@ -61,7 +61,7 @@ double func(double diff_conc, double lam) {
 
     double D = 1 / 1; // to 10^5 \nu m^2/h diffusion coefficient
     double t = 0; // initialise time, redundant
-    double dt = 0.1 / 10; // time step
+    double dt = 0.0001; // time step
     int dx = 1; // space step in x direction
     int dy = 1; // space step in y direction
     double kai = 0.0001 / 10; // to 1 /h production rate of chemoattractant
@@ -73,10 +73,11 @@ double func(double diff_conc, double lam) {
     //int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
     // matrix that stores the values of concentration of chemoattractant
-    MatrixXf chemo(length_x, length_y), chemo_new(length_x, length_y);
+    MatrixXf chemo = MatrixXf::Zero(length_x, length_y);
+    MatrixXf chemo_new = MatrixXf::Zero(length_x, length_y);
 
     // initialise internalisation matrix
-    MatrixXf intern(length_x, length_y);
+    MatrixXf intern = MatrixXf::Zero(length_x, length_y);
 
     // generate initial concentration of chemoattractant
     for (int i = 0; i < length_x; i++) {
@@ -86,12 +87,18 @@ double func(double diff_conc, double lam) {
         }
     }
 
-    // four columns for x, y, z, u (z is necessaty for paraview)
+    for (int i = 0; i < length_x; i++) {
+        for (int j = 0; j < length_y; j++) {
+            assert(chemo(i, j) >= 0 || chemo(i, j) <= 1);
+        }
+    }
+
+    // four columns for x, y, z, u (z is necessary for paraview)
 
     // form a matrix which would store x,y,z,u
 
-    MatrixXf chemo_3col(length_x * length_y, 4), chemo_3col_ind(length_x * length_y,
-                                                                2); // need for because that is how paraview accepts data, third dimension is just zeros
+    MatrixXf chemo_3col = MatrixXf::Zero(length_x * length_y, 4);
+    MatrixXf chemo_3col_ind = MatrixXf::Zero(length_x*length_y,2); // need for because that is how paraview accepts data, third dimension is just zeros
 
     // x, y coord, 1st and 2nd columns respectively
     int k = 0;
@@ -120,18 +127,18 @@ double func(double diff_conc, double lam) {
         chemo_3col(i, 3) = chemo(chemo_3col_ind(i, 0), chemo_3col_ind(i, 1));
     }
 
-    // save data to plot chemoattractant concentration in MATLAB
-    ofstream output("matrix_3col.csv");
-
-    output << "x, y, z, u" << "\n" << endl;
-
-
-    for (int i = 0; i < length_x * length_y; i++) {
-        for (int j = 0; j < 4; j++) {
-            output << chemo_3col(i, j) << ", ";
-        }
-        output << "\n" << endl;
-    }
+//    // save data to plot chemoattractant concentration in MATLAB
+//    ofstream output("matrix_3col.csv");
+//
+//    output << "x, y, z, u" << "\n" << endl;
+//
+//
+//    for (int i = 0; i < length_x * length_y; i++) {
+//        for (int j = 0; j < 4; j++) {
+//            output << chemo_3col(i, j) << ", ";
+//        }
+//        output << "\n" << endl;
+//    }
 
 
     /*
@@ -195,7 +202,11 @@ double func(double diff_conc, double lam) {
     std::default_random_engine gen1;
     std::uniform_real_distribution<double> uniformpi(0, 2 * M_PI); // can only move forward
 
-
+    for (int i = 0; i < length_x; i++) {
+        for (int j = 0; j < length_y; j++) {
+            assert(chemo(i, j) >= 0 || chemo(i, j) <= 1);
+        }
+    }
 
     for (int t = 0; t < N_steps; t++) {
         // insert new cells at the start of the domain at insertion time (have to think about this insertion time)
@@ -262,7 +273,8 @@ double func(double diff_conc, double lam) {
 
 
         }
-        //cout << "diff domain outside " << diff_domain << endl;
+
+
 
         // update chemoattractant profile
 
@@ -315,24 +327,16 @@ double func(double diff_conc, double lam) {
 
         }
 
-
         chemo = chemo_new;
 
+        for (int i = 0; i < length_x; i++) {
+            for (int j = 0; j < length_y; j++) {
+                assert(chemo(i, j) >= 0 || chemo(i, j) <= 1);
+            }
+        }
 
+        // Save matrix
 
-        /*
-            Rescale x coordinates properly
-        */
-
-
-        // three columns for x, y, z
-
-        // form a matrix which would store x,y,z, y -same as before
-
-
-        //cout << "old length " << old_length << endl;
-        //cout << "domain length " << domain_length << endl;
-        // x column
         for (int i = 0; i < length_x * length_y; i++) {
             chemo_3col(i, 0) = chemo_3col_ind(i, 0) * (domain_length / length_x);
         }
@@ -357,6 +361,18 @@ double func(double diff_conc, double lam) {
         }
 
 
+
+        /*
+            Rescale x coordinates properly
+        */
+
+
+        // three columns for x, y, z
+
+        // form a matrix which would store x,y,z, y -same as before
+
+
+
         /// update positions uniformly based on the domain growth
 
         if (t % freq_growth == 0) {
@@ -369,11 +385,7 @@ double func(double diff_conc, double lam) {
 
         /////////////////////////////////////
 
-
         // Update positions based on the gradient
-
-
-
 
         // SEARCH MULTIPLE TIMES
 
@@ -393,7 +405,7 @@ double func(double diff_conc, double lam) {
             std::array<double, 3> random_angle;
             std::array<int, 3> sign_x;
             std::array<int, 3> sign_y;
-            for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
 
                 double random_angle_tem = uniformpi(gen1);
                 int sign_x_tem, sign_y_tem;
@@ -414,10 +426,10 @@ double func(double diff_conc, double lam) {
 
                 }
 
-                random_angle[i] = random_angle_tem;
+                random_angle[j] = random_angle_tem;
 
-                sign_x[i] = sign_x_tem;
-                sign_y[i] = sign_y_tem;
+                sign_x[j] = sign_x_tem;
+                sign_y[j] = sign_y_tem;
 
 
             }
@@ -437,7 +449,7 @@ double func(double diff_conc, double lam) {
             //absolute
             //if (new_chemo_1 - old_chemo < diff_conc && new_chemo_2 - old_chemo < diff_conc) {
 
-
+            /*
             // relative
             if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) < diff_conc && (new_chemo_2- old_chemo)/sqrt(old_chemo) < diff_conc){
 
@@ -477,13 +489,14 @@ double func(double diff_conc, double lam) {
                 }
 
             }
+             */
                 //cout << "stops here " << endl;
                 // if first direction greater, second smaller
                 //absolute
             //else if (new_chemo_1 - old_chemo > diff_conc && new_chemo_2 - old_chemo < diff_conc){
 
                 //relative
-            else if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
+            if ((new_chemo_1 - old_chemo)/sqrt(old_chemo) > diff_conc && (new_chemo_2 - old_chemo)/sqrt(old_chemo) < diff_conc){
 
                 x += vdouble2(sin(random_angle[0]), cos(random_angle[0]));
                 //cout << "print id " << id_[x] << endl;
@@ -732,7 +745,11 @@ double func(double diff_conc, double lam) {
 
     }
 
+
+
     return furthest_distance;
+
+
 
 }
 
@@ -752,10 +769,10 @@ int main(){
 
     for (int i=0; i<number_parameters; i++){
 
-        lam[i] = 500;//*(i+1);//0.1;
+        lam[i] = 300;//10*(i+1);//0.1;
         //threshold[i] = 0.5;//0.01*(i+1);// 0.01;
-        threshold[i] = 1*(i+1);// 0.01;
-
+        //threshold[i] = 1*(i+1);// 0.01;
+        threshold[i] = 2;//0.05*(i+1);// 0.01;
 
     }
 
@@ -763,15 +780,16 @@ int main(){
     for (int i = 0; i < number_parameters; i++){
 
         for (int j = 0; j < number_parameters; j++){
-
-            density(i,j) = func(threshold[j],lam[i]);
+            cout << "threshold " << threshold[i] << endl;
+            cout << "lam " << lam[j] << endl;
+            density(i,j) = func(threshold[i],lam[j]);
             cout << "number of i " << i << endl;
 
         }
 
     }
 
-
+    /*
     // save data to plot chemoattractant concentration
     ofstream output("density_matrix_cell_induced.csv");
 
@@ -816,7 +834,7 @@ int main(){
         }
         output << "\n" << endl;
     }
-
+    */
 
 
 
