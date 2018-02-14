@@ -27,8 +27,8 @@ int main() {
     double domain_length = 30; //this variable is for the actual domain length
     double old_length = 30;// this is important for the update of the positions
     const int length_y = 12;//120;//20;//4;
-    const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
-    double cell_radius = (7.5)/10;//0.5; // radius of a cell
+    double cell_radius = 0.75;//0.5; // radius of a cell
+    const double diameter = 2*cell_radius;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     int N_steps = 100; // number of times the cells move up the gradient
     const size_t N = 4; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
@@ -51,9 +51,10 @@ int main() {
 
     double L_0 = 30; // will have to make this consistent with actual initial length
     double a = 0.008;
-    double L_inf = 87;
+    double L_inf = 86.7;
     double t_s = 16;
-    double constant = 30;
+    double constant = 29;
+
 
     double domain_len_der = 0; // initialise derivative of the domain growth function
 
@@ -70,15 +71,16 @@ int main() {
 
     // parameters for internalisation
 
-    double R = 7.5/10; // \nu m cell radius
+    double R = cell_radius; // \nu m cell radius
     int lam = 100/10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
 
     // matrix that stores the values of concentration of chemoattractant
-    MatrixXf chemo(length_x, length_y), chemo_new(length_x,length_y);
+    MatrixXf chemo = MatrixXf::Zero(length_x, length_y);
+    MatrixXf chemo_new = MatrixXf::Zero(length_x, length_y);
 
     // initialise internalisation matrix
-    MatrixXf intern(length_x,length_y);
+    MatrixXf intern = MatrixXf::Zero(length_x, length_y);
 
     // generate initial chemoattractant concentration
     for (int i = 0;i<length_x;i++){
@@ -93,7 +95,8 @@ int main() {
 
     // form a matrix which would store x,y,z,u
 
-    MatrixXf chemo_3col(length_x*length_y,4), chemo_3col_ind(length_x*length_y,2); // need for because that is how paraview accepts data, third dimension is just zeros
+    MatrixXf chemo_3col = MatrixXf::Zero(length_x*length_y,4);
+    MatrixXf chemo_3col_ind = MatrixXf::Zero(length_x*length_y,2); // need for because that is how paraview accepts data, third dimension is just zeros
 
     // x, y coord, 1st and 2nd columns respectively
     int k = 0;
@@ -122,20 +125,6 @@ int main() {
         chemo_3col(i,3) = chemo(chemo_3col_ind(i,0),chemo_3col_ind(i,1));
     }
 
-    // save data to plot chemoattractant concentration in MATLAB
-    ofstream output("matrix_3col.csv");
-
-    output << "x, y, z, u" << "\n" << endl;
-
-
-    for (int i=0;i<length_x*length_y;i++){
-        for(int j=0;j<4;j++){
-            output << chemo_3col(i,j) << ", ";
-        }
-        output << "\n" << endl;
-    }
-
-
     /*
      * 2D domain with a few randomly placed particles
      */
@@ -146,26 +135,18 @@ int main() {
 
     //ABORIA_VARIABLE(velocity,vdouble2,"velocity")
     ABORIA_VARIABLE(radius,double,"radius")
-    ABORIA_VARIABLE(type,int,"type") // 1 if a cell is a leader, 0 if it is attached to another cell, 2 if dettached
-    ABORIA_VARIABLE(direction,vdouble2,"direction")
+    ABORIA_VARIABLE(direction,vdouble2,"direction")// stores the direction a particle moved
     ABORIA_VARIABLE(attached_to_id,int,"attached_to_id")
-    ABORIA_VARIABLE(attached_to_type,int,"attached_to_type")
-    ABORIA_VARIABLE(chain,int,"chain") // 1 if attached to a chain with a leader in front, 0 if not attached
+    ABORIA_VARIABLE(attached_to_type,int,"attached_to_type") // type 1 if it is attached to a leader, 0 o/w
+    ABORIA_VARIABLE(chain,vdouble2,"closest_distance") // stores the distance to the closest neighbour, if less than thresold
     typedef Particles<std::tuple<radius, direction>,2> particle_type; // 2 stands for dimension
-    typedef Particles<std::tuple<radius, attached_to_id, attached_to_type, direction, chain>,2> followers_type;
-    /*
-     * if attached to a leader attached_to_type = 2;
-     * if attached to a follower attached_to_type = 1;
-     * if dettached attached_to_type = 0;
-     * */
-    //typedef Particles<std::tuple<radius, attached_to, >,2> attached_followers_type;
-    //typedef Particles<std::tuple<radius,type>,2> detached_followers_type;
+    typedef Particles<std::tuple<radius, attached_to_id, attached_to_type, direction, closest_distnace>,2> followers_type;
+
 
     //typedef Particles<std::tuple<>,2,std::vector,bucket_search_serial> particle_type;
     typedef particle_type::position position;
     typedef followers_type::position position;
-    //typedef attached_followers_type::position position;
-    //typedef detached_followers_type::position position;
+
 
     particle_type particles;
     followers_type followers;
@@ -177,12 +158,13 @@ int main() {
 
     /*
          * initialise neighbour search with 2d cuboid domain,
-         * periodic in x and y
+         * periodic in x and y, domain grows
          */
 
-    particles.init_neighbour_search(vdouble2(0,0), vdouble2(length_x,length_y), vbool2(false,false));
-    followers.init_neighbour_search(vdouble2(0,0), vdouble2(length_x,length_y), vbool2(false,false));
+    particles.init_neighbour_search(vdouble2(0,0), 5*vdouble2(length_x,length_y), vbool2(false,false));
+    followers.init_neighbour_search(vdouble2(0,0), 5*vdouble2(length_x,length_y), vbool2(false,false));
 
+    //initialise leaders
 
     for (int i=0; i<N; ++i) {
         bool free_position = false;
@@ -211,13 +193,11 @@ int main() {
         }
         particles.push_back(p);
     }
-
-    // save particles before they move
-    vtkWriteGrid("before",0,particles.get_grid(true));
-    vtkWriteGrid("particles",t,particles.get_grid(true));
+    particles.update_positions();
 
 
-    // choose a set of random number between 0 and 2*pi, to avoid more rejections when it goes backwords (it would always be rejected)
+
+    // choose a set of random number between 0 and 2*pi
     std::default_random_engine gen1;
     std::uniform_real_distribution<double> uniformpi(0, 2*M_PI);
 
@@ -273,9 +253,15 @@ int main() {
 
             // find the closest leader or other follower and set the attach to it
 
+
+
+
             // variables to keep track of distances
+
+            /*
             particle_type::value_type closest_neighbour;
             followers_type::value_type closest_neighbour_follower;
+
             double distance = l_filo; // initially set to l_filo
             double distance_follower = l_filo;
 
@@ -287,6 +273,7 @@ int main() {
                  *  (1) -> relative position of neighbouring particle
                  *         from query point
                  */
+            /*
                 const vdouble2& dx = std::get<1>(tpl);
                 const particle_type::value_type& j = std::get<0>(tpl);
 
@@ -298,9 +285,11 @@ int main() {
                     }
                 }
             }
+            */
 
             // closest follower
 
+            /*
             for (auto tpl: euclidean_search(followers.get_query(),get<position>(f),l_filo)) {
                 /*
                  * tpl variable is a tuple containing:
@@ -308,6 +297,8 @@ int main() {
                  *  (1) -> relative position of neighbouring particle
                  *         from query point
                  */
+
+            /*
                 const vdouble2& dx = std::get<1>(tpl);
                 const followers_type::value_type& j = std::get<0>(tpl);
 
@@ -323,7 +314,9 @@ int main() {
                     }
                 }
             }
+            */
 
+            /*
             // compare if the closest leader or follower is the nearest neighbour to choose correct type
             cout << " distance " << distance << endl;
             cout << " follower distance " << distance_follower << endl;
@@ -351,6 +344,7 @@ int main() {
                 get<chain>(f) = 0;
             }
             cout << "attached to " << get<attached_to_type>(f) << endl;
+             */
 
             if (free_position == true){
                 followers.push_back(f);}
@@ -363,18 +357,6 @@ int main() {
 
 
         if (t % freq_growth == 0){
-
-            //domain_length = domain_length + 1.0;
-
-            // no time delay
-            //domain_length = ((L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) );
-
-            //domain_len_der = ((a*L_inf*exp(a*t))/ (L_inf/L_0 + exp(a*t) - 1) - (a*L_inf*exp(2*a*t))/(L_inf/L_0 + exp(a*t) - 1) );
-
-            // from the paper
-            //domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
-
-            //domain_len_der = ((a*L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) - (a*L_inf*exp(2*a*(t-t_s)))/(L_inf/L_0 + exp(a*(t-t_s)) - 1) );
 
             // with time delay and constant to make the initial conditions consistent
             domain_length = ((L_inf*exp(a*(t-t_s)))/ (L_inf/L_0 + exp(a*(t-t_s)) - 1) ) + constant;
@@ -415,7 +397,7 @@ int main() {
 
 
                 // logistic production rate
-                //chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
+                chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
 
 
                 //different production rate, linear
@@ -432,7 +414,7 @@ int main() {
 
 
                 // no source
-                chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j)  - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
+                //chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j)  - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
 
             }
             //cout << "print the internalisation term " << intern(i,j) << endl;
@@ -535,33 +517,33 @@ int main() {
 
             // create an array to store random directions
             std::array<double, 3> random_angle;
-            std::array<int, 3> sign_x;
-            std::array<int, 3> sign_y;
-            for (int i = 0; i < 3; i++) {
+//            std::array<int, 3> sign_x;
+//            std::array<int, 3> sign_y;
+            for (int j = 0; j < 3; j++) {
 
                 double random_angle_tem = uniformpi(gen1);
-                int sign_x_tem, sign_y_tem;
+//                int sign_x_tem, sign_y_tem;
 
-                while (round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) < 0 ||
-                       round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) >
-                       length_x - 1 || round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) < 0 ||
-                       round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) > length_y - 1) {
+                while (round((x[0] * (length_x / domain_length) + sin(random_angle_tem)* l_filo)) < 0 ||
+                       round((x[0] * (length_x / domain_length) + sin(random_angle_tem)  * l_filo)) >
+                       length_x - 1 || round(x[1] + cos(random_angle_tem)  * l_filo) < 0 ||
+                       round(x[1] + cos(random_angle_tem)  * l_filo) > length_y - 1) {
                     random_angle_tem = uniformpi(gen1);
 
-                    if (sin(random_angle_tem) < 0) {
-                        sign_x_tem = -1;
-                    } else { sign_x_tem = 1; }
-
-                    if (cos(random_angle_tem) < 0) {
-                        sign_y_tem = -1;
-                    } else { sign_y_tem = 1; }
+//                    if (sin(random_angle_tem) < 0) {
+//                        sign_x_tem = -1;
+//                    } else { sign_x_tem = 1; }
+//
+//                    if (cos(random_angle_tem) < 0) {
+//                        sign_y_tem = -1;
+//                    } else { sign_y_tem = 1; }
 
                 }
 
-                random_angle[i] = random_angle_tem;
+                random_angle[j] = random_angle_tem;
 
-                sign_x[i] = sign_x_tem;
-                sign_y[i] = sign_y_tem;
+//                sign_x[j] = sign_x_tem;
+//                sign_y[j] = sign_y_tem;
 
 
             }
@@ -632,8 +614,6 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[2]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[2]))) < length_x - 1 && round(x[1] + cos(random_angle[2])) > 0 &&
                         round(x[1] + cos(random_angle[2])) < length_y - 1) {
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[2]),
-                                                            cos(random_angle[2])); // update if nothing is in the next position
                     get<direction>(particles)[i] = speed_l*(sin(random_angle[2]),
                                                             cos(random_angle[2]));
                 }
@@ -691,8 +671,6 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
                     round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
                     round(x[1] + cos(random_angle[0])) < length_y - 1){
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[0]),
-                                                            cos(random_angle[0])); // update if nothing is in the next position
                     get<direction>(particles)[i] = speed_l*(sin(random_angle[0]),
                             cos(random_angle[0]));
                 }
@@ -753,8 +731,6 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
                      round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
                      round(x[1] + cos(random_angle[1])) < length_y - 1){
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[1]),
-                                                            cos(random_angle[1])); // update if nothing is in the next position
                     get<direction>(particles)[i] = speed_l*(sin(random_angle[1]),
                             cos(random_angle[1]));
                 }
@@ -818,8 +794,6 @@ int main() {
                     if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
                         round(x[1] + cos(random_angle[0])) < length_y - 1){
-                        get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[0]),
-                                                                cos(random_angle[0])); // update if nothing is in the next position
                         get<direction>(particles)[i] = speed_l*(sin(random_angle[0]),
                                 cos(random_angle[0]));
                     }
@@ -871,13 +845,25 @@ int main() {
                     if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
                         round(x[1] + cos(random_angle[1])) < length_y - 1) {
-                        get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[1]),
-                                                                cos(random_angle[1])); // update if nothing is in the next position
                         get<direction>(particles)[i] = speed_l*(sin(random_angle[1]),
                                 cos(random_angle[1]));
                     }
                 }
             }
+
+            // find all the followers that are close enough to the leader
+
+
+
+
+
+
+
+            // update the position of the leader and neighbouring chain of its followers
+            get<position>(particles)[i] += get<direction>(particles)[i]; // update if nothing is in the next position
+
+
+
         }// go through all the particles-leaders
 
 

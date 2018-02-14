@@ -27,8 +27,8 @@ int main() {
     double domain_length = 30; //this variable is for the actual domain length
     double old_length = 30;// this is important for the update of the positions
     const int length_y = 12;//120;//20;//4;
-    const double diameter = (2*7.5)/10;//2 // diameter in which there have to be no cells, equivalent to size of the cell
-    double cell_radius = (7.5)/10;//0.5; // radius of a cell
+    double cell_radius = 7.5;//0.5; // radius of a cell
+    const double diameter = 2*cell_radius;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     const int N_steps = 200; // number of times the cells move up the gradient
     const size_t N = 4; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
@@ -58,9 +58,9 @@ int main() {
 
     double L_0 = 30; // will have to make this consistent with actual initial length
     double a = 0.008;
-    double L_inf = 87;
+    double L_inf = 86.7;
     double t_s = 16;
-    double constant = 30;
+    double constant = 29;
 
     double domain_len_der = 0; // initialise derivative of the domain growth function
 
@@ -82,10 +82,11 @@ int main() {
 
 
     // matrix that stores the values of concentration of chemoattractant
-    MatrixXf chemo(length_x, length_y), chemo_new(length_x,length_y);
+    MatrixXf chemo = MatrixXf::Zero(length_x, length_y);
+    MatrixXf chemo_new = MatrixXf::Zero(length_x, length_y);
 
     // initialise internalisation matrix
-    MatrixXf intern(length_x,length_y);
+    MatrixXf intern = MatrixXf::Zero(length_x, length_y);
 
     // generate initial chemoattractant concentration
     for (int i = 0;i<length_x;i++){
@@ -364,7 +365,7 @@ int main() {
 
 
                 // logistic production rate
-                //chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
+                chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j) + kai*chemo(i,j)*(1-chemo(i,j)) - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
 
 
                 //different production rate, linear
@@ -381,7 +382,7 @@ int main() {
 
 
                 // no source
-                chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j)  - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
+                //chemo_new(i,j) = dt * (D*((1/((domain_length/length_x)*(domain_length/length_x))) * (chemo(i+1,j)-2*chemo(i,j)+chemo(i-1,j))/(dx*dx) + (chemo(i,j+1)- 2* chemo(i,j)+chemo(i,j-1))/(dy*dy)) - (chemo(i,j)*lam / (2*M_PI*R*R)) * intern(i,j)  - double(domain_len_der)/double(domain_length) * chemo(i,j) ) + chemo(i,j);
 
             }
             //cout << "print the internalisation term " << intern(i,j) << endl;
@@ -457,33 +458,33 @@ int main() {
 
             // create an array to store random directions
             std::array<double, 3> random_angle;
-            std::array<int, 3> sign_x;
-            std::array<int, 3> sign_y;
+//            std::array<int, 3> sign_x;
+//            std::array<int, 3> sign_y;
             for (int j = 0; j < 3; j++) {
 
                 double random_angle_tem = uniformpi(gen1);
-                int sign_x_tem, sign_y_tem;
+//                int sign_x_tem, sign_y_tem;
 
-                while (round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) < 0 ||
-                       round((x[0] * (length_x / domain_length) + sin(random_angle_tem) + sign_x_tem * l_filo)) >
-                       length_x - 1 || round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) < 0 ||
-                       round(x[1] + cos(random_angle_tem) + sign_y_tem * l_filo) > length_y - 1) {
+                while (round((x[0] * (length_x / domain_length) + sin(random_angle_tem)  * l_filo)) < 0 ||
+                       round((x[0] * (length_x / domain_length) + sin(random_angle_tem) * l_filo)) >
+                       length_x - 1 || round(x[1] + cos(random_angle_tem)  * l_filo) < 0 ||
+                       round(x[1] + cos(random_angle_tem)  * l_filo) > length_y - 1) {
                     random_angle_tem = uniformpi(gen1);
 
-                    if (sin(random_angle_tem) < 0) {
-                        sign_x_tem = -1;
-                    } else { sign_x_tem = 1; }
-
-                    if (cos(random_angle_tem) < 0) {
-                        sign_y_tem = -1;
-                    } else { sign_y_tem = 1; }
+//                    if (sin(random_angle_tem) < 0) {
+//                        sign_x_tem = -1;
+//                    } else { sign_x_tem = 1; }
+//
+//                    if (cos(random_angle_tem) < 0) {
+//                        sign_y_tem = -1;
+//                    } else { sign_y_tem = 1; }
 
                 }
 
                 random_angle[j] = random_angle_tem;
 
-                sign_x[j] = sign_x_tem;
-                sign_y[j] = sign_y_tem;
+//                sign_x[j] = sign_x_tem;
+//                sign_y[j] = sign_y_tem;
 
 
             }
