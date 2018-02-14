@@ -17,7 +17,7 @@ using namespace std;
 using namespace Aboria;
 using namespace Eigen; // objects VectorXf, MatrixXd
 
-double func(double diff_conc, double lam) {
+double func(double diff_conc, double lam, int n_seed) {
 
 
     // model parameters
@@ -158,6 +158,7 @@ double func(double diff_conc, double lam) {
     typedef particle_type::position position;
     particle_type particles;
     std::default_random_engine gen;
+    gen.seed(n_seed);
     std::uniform_real_distribution<double> uniform(2, length_y - 1);
 
     /*
@@ -766,110 +767,127 @@ int main(){
 
     const int number_parameters = 100; // parameter range
 
-    // define parameters that I will change
-    //VectorXf slope, threshold;
-    array<double, 2> lam;
-    array<double, number_parameters> threshold;
-    //array<double,number_parameters,number_parameters>;
+    const int sim_num = 40;
 
-    //MatrixXd density = MatrixXd::Zero(number_parameters, number_parameters); // need for because that is how paraview accepts data, third dimension is just zeros
-    MatrixXf density = MatrixXf::Zero(number_parameters,2);
+    MatrixXf all_distances = MatrixXf::Zero(number_parameters,sim_num); //matrix over which I am going to average
 
+//n would correspond to different seeds
+    for (int n = 0; n < sim_num; n++) {
 
-    for (int i=0; i<number_parameters; i++) {
+        // define parameters that I will change
+        //VectorXf slope, threshold;
+        array<double, 1> lam;
+        array<double, number_parameters> threshold;
+        //array<double,number_parameters,number_parameters>;
 
-        //lam[i] = 10 * (i + 1);//0.1;
-        //threshold[i] = 0.5;//0.01*(i+1);// 0.01;
-        //threshold[i] = 1*(i+1);// 0.01;
-        threshold[i] = 0.005 * (i + 1);// 0.01;
-
-    }
-
-    lam[0] = 100;
-
-    lam[1] = 500;
-    //cout << "lam " << lam[0] << endl;
-    //cout << "threshold " << threshold[0] << endl;
-
-    //cout << "value " << func(0.05,410.0) << endl;
-
-    for (int i = 0; i < number_parameters; i++){
-        for (int j = 0; j < 2; j++){
-            cout << "iteration i " << i << endl;
-            density(i,j) = func(threshold[i],lam[j]);
-
-            if (density(i,j) > 50){
-                cout << "i of far distance " << i << endl;
-                cout << "j of far distance " << j << endl;
-            }
-        }
-    }
+        //MatrixXd density = MatrixXd::Zero(number_parameters, number_parameters); // need for because that is how paraview accepts data, third dimension is just zeros
+        MatrixXf density = MatrixXf::Zero(number_parameters, 1);
 
 
-    /*
-    // save data to plot chemoattractant concentration
-    ofstream output("density_matrix_cell_induced.csv");
-
-    MatrixXd density_3col(number_parameters * number_parameters, 4), density_3col_ind(number_parameters * number_parameters,
-                                                                2); // need for because that is how paraview accepts data, third dimension is just zeros
-
-
-
-    // x, y coord, 1st and 2nd columns respectively
-    int k = 0;
-    // it has to be 3D for paraview
-    while (k < number_parameters * number_parameters) {
         for (int i = 0; i < number_parameters; i++) {
-            for (int j = 0; j < number_parameters; j++) {
-                density_3col_ind(k, 0) = i;
-                density_3col_ind(k, 1) = j;
-                density_3col(k, 2) = 0;
-                k += 1;
+
+            //lam[i] = 10 * (i + 1);//0.1;
+            //threshold[i] = 0.5;//0.01*(i+1);// 0.01;
+            //threshold[i] = 1*(i+1);// 0.01;
+            threshold[i] = 0.005 * (i + 1);// 0.01;
+
+        }
+
+        lam[0] = 100;
+
+        //lam[1] = 500;
+        //cout << "lam " << lam[0] << endl;
+        //cout << "threshold " << threshold[0] << endl;
+
+        //cout << "value " << func(0.05,410.0) << endl;
+
+        for (int i = 0; i < number_parameters; i++) {
+            for (int j = 0; j < 1; j++) {
+                cout << "iteration i " << i << endl;
+                density(i, j) = func(threshold[i], lam[j]);
+
+
+            }
+            all_distances(i, n) = density(i, 0);
+        }
+
+
+        /*
+        // save data to plot chemoattractant concentration
+        ofstream output("density_matrix_cell_induced.csv");
+
+        MatrixXd density_3col(number_parameters * number_parameters, 4), density_3col_ind(number_parameters * number_parameters,
+                                                                    2); // need for because that is how paraview accepts data, third dimension is just zeros
+
+
+
+        // x, y coord, 1st and 2nd columns respectively
+        int k = 0;
+        // it has to be 3D for paraview
+        while (k < number_parameters * number_parameters) {
+            for (int i = 0; i < number_parameters; i++) {
+                for (int j = 0; j < number_parameters; j++) {
+                    density_3col_ind(k, 0) = i;
+                    density_3col_ind(k, 1) = j;
+                    density_3col(k, 2) = 0;
+                    k += 1;
+                }
             }
         }
-    }
 
 
-    // y and x (initially) column
-    for (int i = 0; i < number_parameters * number_parameters; i++) {
-        density_3col(i, 1) = density_3col_ind(i, 1);
-        density_3col(i, 0) = density_3col_ind(i, 0);
-    }
-
-
-    // u column
-    for (int i = 0; i < number_parameters * number_parameters; i++) {
-        density_3col(i, 3) = density(density_3col_ind(i, 0), density_3col_ind(i, 1));
-    }
-
-    output << "x, y, z, u" << "\n" << endl;
-
-
-    for (int i = 0; i < number_parameters * number_parameters; i++) {
-        for (int j = 0; j < 4; j++) {
-            output << density_3col(i, j) << ", ";
+        // y and x (initially) column
+        for (int i = 0; i < number_parameters * number_parameters; i++) {
+            density_3col(i, 1) = density_3col_ind(i, 1);
+            density_3col(i, 0) = density_3col_ind(i, 0);
         }
-        output << "\n" << endl;
-    }
-    */
 
 
-
-
-    // This might be useful for matlab
-    ofstream output2("density_matrix_matlab_cell_induced.csv");
-
-    for (int i = 0; i < number_parameters; i++){
-
-        for (int j = 0; j < 2; j++){
-
-            output2 << density(i,j) << ", ";
-
+        // u column
+        for (int i = 0; i < number_parameters * number_parameters; i++) {
+            density_3col(i, 3) = density(density_3col_ind(i, 0), density_3col_ind(i, 1));
         }
-        output2 << "\n" << endl;
+
+        output << "x, y, z, u" << "\n" << endl;
+
+
+        for (int i = 0; i < number_parameters * number_parameters; i++) {
+            for (int j = 0; j < 4; j++) {
+                output << density_3col(i, j) << ", ";
+            }
+            output << "\n" << endl;
+        }
+        */
+
+
+
+
+        // This might be useful for matlab
+        ofstream output2("density_matrix_matlab_cell_induced.csv");
+
+        for (int i = 0; i < number_parameters; i++) {
+
+            for (int j = 0; j < 1; j++) {
+
+                output2 << density(i, j) << ", ";
+
+            }
+            output2 << "\n" << endl;
+        }
+
+
+        ofstream output3("simulations_cell_induced.csv");
+
+        for (int i = 0; i < number_parameters; i++) {
+
+            for (int j = 0; j < sim_num; j++) {
+
+                output3 << all_distances(i, j) << ", ";
+
+            }
+            output3 << "\n" << endl;
+        }
+
     }
-
-
-
 
 }

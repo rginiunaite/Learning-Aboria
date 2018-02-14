@@ -18,7 +18,7 @@ using namespace std;
 using namespace Aboria;
 using namespace Eigen; // objects VectorXf, MatrixXf
 
-double func(double diff_conc, double slope) {
+double func(double diff_conc, double slope, int n_seed) {
 
     //double diff_conc=0.08;
     //double slope = 0.1;
@@ -77,7 +77,7 @@ double func(double diff_conc, double slope) {
     // parameters for internalisation
 
     double R = cell_radius; // \nu m cell radius
-    int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
+    //int lam = 100 / 10;//(100)/10; // to 1000 /h chemoattractant internalisation
 
     // matrix that stores the values of concentration of chemoattractant
     MatrixXf chemo = MatrixXf::Zero(length_x, length_y);
@@ -155,6 +155,7 @@ double func(double diff_conc, double slope) {
     typedef particle_type::position position;
     particle_type particles;
     std::default_random_engine gen;
+    gen.seed(n_seed);
     std::uniform_real_distribution<double> uniform(2, length_y - 1);
 
     /*
@@ -648,15 +649,13 @@ double func(double diff_conc, double slope) {
         vtkWriteGrid("particles", t + 1, particles.get_grid(true));
 #endif
 
-        //for (int i =0;i<5;++i){cout << "koks rezas " << i <<endl;}
-        //length_x_change = new_length_x_change;
-        //cout << "new length " << new_length_x_change << endl;
+
     }//all time steps
 
-    /*for (int i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < particles.size(); i++) {
         cout << "Positions = " << get<position>(particles[i]) << "\n";
     }
-    */
+
 
     // count the number of particles that are at the last 10% of the domain
 
@@ -701,13 +700,13 @@ double func(double diff_conc, double slope) {
 // parameter analysis
 int main(){
 
-    const int number_parameters = 1; // parameter range
-//    const int sim_num = 6;
-//
-//    MatrixXf all_distances = MatrixXf::Zero(number_parameters,sim_num); //matrix over which I am going to average
-//
-//
-//for (int n = 0; n < sim_num; n++) {
+    const int number_parameters = 100; // parameter range
+    const int sim_num = 40;
+
+    MatrixXf all_distances = MatrixXf::Zero(number_parameters,sim_num); //matrix over which I am going to average
+
+//n would correspond to different seeds
+for (int n = 0; n < sim_num; n++) {
 
 
     // define parameters that I will change
@@ -735,11 +734,11 @@ int main(){
 
             //for (int j = 0; j < 1; j++) {
 
-                density(i, 0) = func(threshold[i], slope[0]);
+                density(i, 0) = func(threshold[i], slope[0], n);
                 cout << "number of parameters investigated " << i << endl;
 
             //}
-            //all_distances(i,n) = density(i,0);
+            all_distances(i,n) = density(i,0);
         }
 
 
@@ -802,24 +801,21 @@ int main(){
             output2 << "\n" << endl;
         }
 
-    //}
+    }
 
-//
-//    MatrixXf average = MatrixXf::Zero(number_parameters, 1);
-//
-////    average = all_distances.mean();
-//
-//    ofstream output2("simulations_simple.csv");
-//
-//    for (int i = 0; i < number_parameters; i++) {
-//
-//        for (int j = 0; j < sim_num; j++) {
-//
-//            output2 << all_distances(i, j) << ", ";
-//
-//        }
-//        output2 << "\n" << endl;
-//    }
+
+
+    ofstream output3("simulations_simple.csv");
+
+    for (int i = 0; i < number_parameters; i++) {
+
+        for (int j = 0; j < sim_num; j++) {
+
+            output3 << all_distances(i, j) << ", ";
+
+        }
+        output3 << "\n" << endl;
+    }
 
 
 }
