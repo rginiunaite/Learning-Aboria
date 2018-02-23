@@ -49,11 +49,18 @@ int main() {
 
     // for logistic growth with delay
 
+    // correct, but for now use different ones
+//    double L_0 = 30; // will have to make this consistent with actual initial length
+//    double a = 0.23/60;//0.008;//0.23/10;
+//    double L_inf = 86.76;
+//    double t_s = 16*60;//4.31*10;
+//    double constant = 29.12;
+
     double L_0 = 30; // will have to make this consistent with actual initial length
-    double a = 0.008;
-    double L_inf = 86.7;
-    double t_s = 16;
-    double constant = 29;
+    double a = 0.008;//0.008;//0.23/10;
+    double L_inf = 86.76;
+    double t_s = 16;//4.31*10;
+    double constant = 29.12;
 
 
     double domain_len_der = 0; // initialise derivative of the domain growth function

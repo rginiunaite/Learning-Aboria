@@ -27,16 +27,16 @@ int main() {
     double domain_length = 30; //this variable is for the actual domain length
     double old_length = 30;// this is important for the update of the positions
     const int length_y = 12;//120;//20;//4;
-    double cell_radius = 7.5;//0.5; // radius of a cell
+    double cell_radius = 0.75;//0.5; // radius of a cell
     const double diameter = 2*cell_radius;//2 // diameter in which there have to be no cells, equivalent to size of the cell
-    const int N_steps = 200; // number of times the cells move up the gradient
-    const size_t N = 4; // initial number of cells
+    const int N_steps = 800; // number of times the cells move up the gradient
+    const size_t N = 5; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
     double diff_conc = 0.05; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
     int insertion_freq = 1;
-    double speed_l = 1; // speed of a leader cell
-    double speed_f = 1; // speed of a follower cell
+    double speed_l = 0.05; // speed of a leader cell
+    double speed_f = 0.08; // speed of a follower cell
 
 
     // distance to the track parameters
@@ -56,23 +56,30 @@ int main() {
 
     // for logistic growth with delay
 
+    // correct, but for now use different ones
+//    double L_0 = 30; // will have to make this consistent with actual initial length
+//    double a = 0.23/60;//0.008;//0.23/10;
+//    double L_inf = 86.76;
+//    double t_s = 16*60;//4.31*10;
+//    double constant = 29.12;
+
     double L_0 = 30; // will have to make this consistent with actual initial length
-    double a = 0.008;
-    double L_inf = 86.7;
-    double t_s = 16;
-    double constant = 29;
+    double a = 0.001;//0.008;//0.23/10;
+    double L_inf = 86.76;
+    double t_s = 16;//4.31*10;
+    double constant = 29.12;
 
     double domain_len_der = 0; // initialise derivative of the domain growth function
 
     // parameters for the dynamics of chemoattractant concentration
 
 
-    double D = 1/1000; // to 10^5 \nu m^2/h diffusion coefficient
+    double D = 1/1; // to 10^5 \nu m^2/h diffusion coefficient
     double t = 0; // initialise time, redundant
-    double dt = 0.1/10; // time step
+    double dt = 0.01/10; // time step
     int dx = 1; // space step in x direction
     int dy = 1; // space step in y direction
-    double kai = 1/10;//0.0001/10; // to 1 /h production rate of chemoattractant
+    double kai = 1/100;//0.0001/10; // to 1 /h production rate of chemoattractant
 
 
     // parameters for internalisation
@@ -204,7 +211,7 @@ int main() {
             /*
              * loop over all neighbouring particles within "diameter=2*radius" distance
              */
-            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),diameter)) {
+            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),0.5*diameter)) {
                 /*
                  * tpl variable is a tuple containing:
                  *  (0) -> neighbouring particle value_type
@@ -497,11 +504,11 @@ int main() {
 
             double old_chemo = chemo((round((x)[0] * (length_x / domain_length))),round(x)[1]);
 
-            double new_chemo_1 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[0]) + sign_x[0] * l_filo)),
-                                       round(x[1] + cos(random_angle[0]) + sign_y[0] * l_filo));
+            double new_chemo_1 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[0]) * l_filo)),
+                                       round(x[1] + cos(random_angle[0]) * l_filo));
 
-            double new_chemo_2 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[1]) + sign_x[1] * l_filo)),
-                                       round(x[1] + cos(random_angle[1]) + sign_y[1] * l_filo));
+            double new_chemo_2 = chemo(round((x[0] * (length_x / domain_length) + sin(random_angle[1]) * l_filo)),
+                                       round(x[1] + cos(random_angle[1]) * l_filo));
 
 
             //if both smaller, move random direction
@@ -673,7 +680,7 @@ int main() {
                     get<direction>(particles)[i] = speed_l*(sin(random_angle[1]),
                             cos(random_angle[1]));
                 }
-                break;
+                //break;
             }
                 // if both greater choose the bigger one
 
@@ -867,7 +874,7 @@ int main() {
             bool free_position = true; // check if the neighbouring position is free
 
             // if this loop is entered, it means that there is another cell where I want to move
-            for (const auto &k: euclidean_search(particles.get_query(), x_can, diameter)) {
+            for (const auto &k: euclidean_search(particles.get_query(), x_can, 0.5*diameter)) {
 
                 particle_type::const_reference b = std::get<0>(k);
                 const vdouble2 &dx = std::get<1>(k);
@@ -881,7 +888,7 @@ int main() {
 
             }
 
-            for (const auto &k: euclidean_search(followers.get_query(), x_can, diameter)) {
+            for (const auto &k: euclidean_search(followers.get_query(), x_can, 0.5*diameter)) {
 
                 followers_type::const_reference b = std::get<0>(k);
                 const vdouble2 &dx = std::get<1>(k);
@@ -894,10 +901,19 @@ int main() {
                 }
             }
 
-            if (get<id>(followers[i]) == 6){
-                if (free_position == false){
-                    cout << "free position false " << endl;
+            // it is possible that randomly they get dettached
+
+            std::default_random_engine gen_prob;
+            gen_prob.seed(t*i); // different seeds
+            std::uniform_real_distribution<double> uniform_prob(0,1);
+
+            if (get<chain>(followers[i]) == 1){
+                double rand_n = uniform_prob(gen_prob);
+                cout << "rand n " << rand_n << endl;
+                if (rand_n>0.5){
+                    get<chain>(followers[i]) = 0;
                 }
+
             }
 
             // if the cell is part of the chain update its position
@@ -919,7 +935,7 @@ int main() {
                        round((x[0] * (length_x / domain_length) + sin(random_angle) + sign_x * l_filo)) >
                        length_x - 1 || round(x[1] + cos(random_angle) + sign_y * l_filo) < 0 ||
                        round(x[1] + cos(random_angle) + sign_y * l_filo) > length_y - 1) {
-                    random_angle = uniformpi(gen1);
+                        random_angle = uniformpi(gen1);
 
                     if (sin(random_angle) < 0) {
                         sign_x = -1;
@@ -931,13 +947,13 @@ int main() {
 
                 }
 
-                x += vdouble2(sin(random_angle), cos(random_angle));
+                x += speed_f * vdouble2(sin(random_angle), cos(random_angle));
 
                 bool free_position = true; // check if the neighbouring position is free
 
                 // if this loop is entered, it means that there is another cell where I want to move
-                for (const auto &k: euclidean_search(particles.get_query(), x, diameter)) {
-
+                for (const auto &k: euclidean_search(particles.get_query(), x, 0.5 * diameter)) {
+                    cout << " just to check how frequently it enters here " << endl;
                     particle_type::const_reference b = std::get<0>(k);
                     const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
@@ -950,9 +966,9 @@ int main() {
                     //}
                 }
 
-                for (const auto &k: euclidean_search(followers.get_query(), x, diameter)) {
+                for (const auto &k: euclidean_search(followers.get_query(), x, 0.5 * diameter)) {
 
-
+                    cout << "and how frequently here " << endl;
                     followers_type::const_reference b = std::get<0>(k);
                     const vdouble2 &dx = std::get<1>(k);
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
@@ -961,22 +977,37 @@ int main() {
                     //for (int i=0; i < particles.size(); i++) {
                     if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
+                        cout << "same id, and how frequently here " << endl;
                         free_position = false;
                     }
                 }
 
+                if (free_position == false){
+                    cout << "not free " << endl;
+                }
+
+                cout << " x coord " << round((x[0] * (length_x / domain_length))) << endl;
+                cout << "y coord " <<  round(x[1]) << endl;
+
+
+                if (round((x[0] * (length_x / domain_length))) > 0 &&
+                round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                round(x[1]) < length_y - 1){
+
+                    cout << "this condition satisfied" << endl;
+                }
 
 
                 // check that the position they want to move to is free and not out of bounds
-                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
-                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+                if (free_position == true && round((x[0] * (length_x / domain_length))) >= 0 &&
+                    round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) >= 0 &&
                     round(x[1]) < length_y - 1) {
+                    cout << " moves " << endl;
                     //cout << "how frequently come in here " << endl;
                     get<position>(followers)[i] += speed_f * vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
                     get<direction>(followers)[i] = speed_f * vdouble2(sin(random_angle), cos(random_angle));
                 }
             }
-
 
         }
         followers.update_positions();
