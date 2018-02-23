@@ -30,7 +30,7 @@ int main() {
     double cell_radius = 0.75;//0.5; // radius of a cell
     const double diameter = 2*cell_radius;//2 // diameter in which there have to be no cells, equivalent to size of the cell
     const int N_steps = 800; // number of times the cells move up the gradient
-    const size_t N = 5; // initial number of cells
+    const size_t N = 7; // initial number of cells
     double l_filo = 27.5/10;//2; // sensing radius
     double diff_conc = 0.05; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
@@ -201,33 +201,56 @@ int main() {
     followers.init_neighbour_search(vdouble2(0,0), 5*vdouble2(length_x,length_y), vbool2(false,false));
 
 
+    /*
+     * compact initialisation
+     */
+
     for (int i=0; i<N; ++i) {
-        bool free_position = false;
+
         particle_type::value_type p;
         get<radius>(p) = cell_radius;
-        while(free_position == false){
-            get<position>(p) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
-            free_position = true;
+
+            get<position>(p) = vdouble2(cell_radius,(i+1)*diameter); // x=2, uniformly in y
             /*
              * loop over all neighbouring particles within "diameter=2*radius" distance
              */
-            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),0.5*diameter)) {
-                /*
-                 * tpl variable is a tuple containing:
-                 *  (0) -> neighbouring particle value_type
-                 *  (1) -> relative position of neighbouring particle
-                 *         from query point
-                 */
-                const vdouble2& dx = std::get<1>(tpl);
-                const particle_type::value_type& j = std::get<0>(tpl);
-                if (dx.norm() <  diameter) {
-                    free_position = false;
-                    break;
-                }
-            }
-        }
+
+
         particles.push_back(p);
     }
+
+
+    /*
+     * random initialisation
+     */
+
+//    for (int i=0; i<N; ++i) {
+//        bool free_position = false;
+//        particle_type::value_type p;
+//        get<radius>(p) = cell_radius;
+//        while(free_position == false){
+//            get<position>(p) = vdouble2(cell_radius,uniform(gen)); // x=2, uniformly in y
+//            free_position = true;
+//            /*
+//             * loop over all neighbouring particles within "diameter=2*radius" distance
+//             */
+//            for (auto tpl: euclidean_search(particles.get_query(),get<position>(p),diameter)) {
+//                /*
+//                 * tpl variable is a tuple containing:
+//                 *  (0) -> neighbouring particle value_type
+//                 *  (1) -> relative position of neighbouring particle
+//                 *         from query point
+//                 */
+//                const vdouble2& dx = std::get<1>(tpl);
+//                const particle_type::value_type& j = std::get<0>(tpl);
+//                if (dx.norm() <  diameter) {
+//                    free_position = false;
+//                    break;
+//                }
+//            }
+//        }
+//        particles.push_back(p);
+//    }
 
     // save particles before they move
     vtkWriteGrid("followers",t,followers.get_grid(true));
@@ -452,12 +475,47 @@ int main() {
 
         // SEARCH MULTIPLE TIMES
 
-        // move all the leaders
+
+        int no_replacements = particles.size(); // to store the number of cells that have already been picked randomly
+
+        int check_rep = 0; // check for repetitions, 0 no rep, 1 rep
+
+        //for (int j=0; j<N_steps;j++){
+
+        std::default_random_engine gen2;
+        std::uniform_real_distribution<double> uniform_particles(0, no_replacements); // can only move forward
+
+        VectorXi particle_id = VectorXi::Zero(particles.size());
 
         for (int i = 0; i < particles.size(); i++) {
 
+            check_rep = 1; // set to 1 to enter the while loop
+            while (check_rep == 1) {
+                check_rep = 0; // it is initially zero and then will be changed to 1 if it is equivalent to others
+                particle_id(i) = uniform_particles(gen2);
+
+
+                for (int j = 0; j < i; j++) {
+                    if (particle_id(i) == particle_id(j)) { check_rep = 1; }
+                }
+                cout << "particle id before " << particle_id(i) << endl;
+            }
+            //cout << "ids " << particle_id(i) << endl;
+        }
+
+
+        // move all the leaders
+
+        // pick a cell randomly
+
+        for (int j = 0; j < particles.size(); j++ ) {
+            cout << " consider this id " << particle_id(j) << endl;
+
+            // go through cells in order
+            //for (int i = 0; i < particles.size(); i++) {
+
             vdouble2 x;
-            x = get<position>(particles[i]);
+            x = get<position>(particles[particle_id(j)]);
             //cout << "particles.size " << i << endl;
             //cout << "print id " << get<id>(particles[i]) << endl;
             //cout << "x coord " << x[0] << endl;
@@ -535,7 +593,7 @@ int main() {
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                     //for (int i=0; i < particles.size(); i++) {
-                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                    if (get<id>(b) != get<id>(particles[particle_id(j)])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
                         free_position = false;
                     }
@@ -560,9 +618,9 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[2]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[2]))) < length_x - 1 && round(x[1] + cos(random_angle[2])) > 0 &&
                         round(x[1] + cos(random_angle[2])) < length_y - 1) {
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[2]),
+                    get<position>(particles)[particle_id(j)] += speed_l*vdouble2(sin(random_angle[2]),
                                                             cos(random_angle[2])); // update if nothing is in the next position
-                    get<direction>(particles)[i] = speed_l*(sin(random_angle[2]),
+                    get<direction>(particles)[particle_id(j)] = speed_l*(sin(random_angle[2]),
                                                             cos(random_angle[2]));
                 }
 
@@ -590,7 +648,7 @@ int main() {
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                     //for (int i=0; i < particles.size(); i++) {
-                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                    if (get<id>(b) != get<id>(particles[particle_id(j)])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
                         free_position = false;
                     }
@@ -616,9 +674,9 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
                     round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
                     round(x[1] + cos(random_angle[0])) < length_y - 1){
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[0]),
+                    get<position>(particles)[particle_id(j)] += speed_l*vdouble2(sin(random_angle[0]),
                                                             cos(random_angle[0])); // update if nothing is in the next position
-                    get<direction>(particles)[i] = speed_l*(sin(random_angle[0]),
+                    get<direction>(particles)[particle_id(j)] = speed_l*(sin(random_angle[0]),
                             cos(random_angle[0]));
                 }
 
@@ -648,7 +706,7 @@ int main() {
                     //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                     //for (int i=0; i < particles.size(); i++) {
-                    if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                    if (get<id>(b) != get<id>(particles[particle_id(j)])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
                         free_position = false;
                     }
@@ -675,9 +733,9 @@ int main() {
                 if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
                      round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
                      round(x[1] + cos(random_angle[1])) < length_y - 1){
-                    get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[1]),
+                    get<position>(particles)[particle_id(j)] += speed_l*vdouble2(sin(random_angle[1]),
                                                             cos(random_angle[1])); // update if nothing is in the next position
-                    get<direction>(particles)[i] = speed_l*(sin(random_angle[1]),
+                    get<direction>(particles)[particle_id(j)] = speed_l*(sin(random_angle[1]),
                             cos(random_angle[1]));
                 }
                 //break;
@@ -708,7 +766,7 @@ int main() {
                         //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                         //for (int i=0; i < particles.size(); i++) {
-                        if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        if (get<id>(b) != get<id>(particles[particle_id(j)])) { // check if it is not the same particle
                             //cout << "reject step " << 1 << endl;
                             free_position = false;
                         }
@@ -734,9 +792,9 @@ int main() {
                     if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[0]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[0]))) < length_x - 1 && round(x[1] + cos(random_angle[0])) > 0 &&
                         round(x[1] + cos(random_angle[0])) < length_y - 1){
-                        get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[0]),
+                        get<position>(particles)[particle_id(j)] += speed_l*vdouble2(sin(random_angle[0]),
                                                                 cos(random_angle[0])); // update if nothing is in the next position
-                        get<direction>(particles)[i] = speed_l*(sin(random_angle[0]),
+                        get<direction>(particles)[particle_id(j)] = speed_l*(sin(random_angle[0]),
                                 cos(random_angle[0]));
                     }
 
@@ -758,7 +816,7 @@ int main() {
                         //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                         //for (int i=0; i < particles.size(); i++) {
-                        if (get<id>(b) != get<id>(particles[i])) { // check if it is not the same particle
+                        if (get<id>(b) != get<id>(particles[particle_id(j)])) { // check if it is not the same particle
                             //cout << "reject step " << 1 << endl;
                             free_position = false;
                         }
@@ -784,9 +842,9 @@ int main() {
                     if (free_position == true && round((x[0] * (length_x / domain_length) + sin(random_angle[1]) )) > 0 &&
                         round((x[0] * (length_x / domain_length) + sin(random_angle[1]))) < length_x - 1 && round(x[1] + cos(random_angle[1])) > 0 &&
                         round(x[1] + cos(random_angle[1])) < length_y - 1) {
-                        get<position>(particles)[i] += speed_l*vdouble2(sin(random_angle[1]),
+                        get<position>(particles)[particle_id(j)] += speed_l*vdouble2(sin(random_angle[1]),
                                                                 cos(random_angle[1])); // update if nothing is in the next position
-                        get<direction>(particles)[i] = speed_l*(sin(random_angle[1]),
+                        get<direction>(particles)[particle_id(j)] = speed_l*(sin(random_angle[1]),
                                 cos(random_angle[1]));
                     }
                 }
@@ -977,32 +1035,27 @@ int main() {
                     //for (int i=0; i < particles.size(); i++) {
                     if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
-                        cout << "same id, and how frequently here " << endl;
+
                         free_position = false;
                     }
                 }
-
-                if (free_position == false){
-                    cout << "not free " << endl;
-                }
-
-                cout << " x coord " << round((x[0] * (length_x / domain_length))) << endl;
-                cout << "y coord " <<  round(x[1]) << endl;
-
-
-                if (round((x[0] * (length_x / domain_length))) > 0 &&
-                round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
-                round(x[1]) < length_y - 1){
-
-                    cout << "this condition satisfied" << endl;
-                }
+//                cout << " x coord " << round((x[0] * (length_x / domain_length))) << endl;
+//                cout << "y coord " <<  round(x[1]) << endl;
+//
+//
+//                if (round((x[0] * (length_x / domain_length))) > 0 &&
+//                round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
+//                round(x[1]) < length_y - 1){
+//
+//                    cout << "this condition satisfied" << endl;
+//                }
 
 
                 // check that the position they want to move to is free and not out of bounds
                 if (free_position == true && round((x[0] * (length_x / domain_length))) >= 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) >= 0 &&
                     round(x[1]) < length_y - 1) {
-                    cout << " moves " << endl;
+                    //cout << " moves " << endl;
                     //cout << "how frequently come in here " << endl;
                     get<position>(followers)[i] += speed_f * vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
                     get<direction>(followers)[i] = speed_f * vdouble2(sin(random_angle), cos(random_angle));
