@@ -35,8 +35,8 @@ int main() {
     double diff_conc = 0.05; // sensing threshold, i.e. how much concentration has to be bigger, so that the cell moves in that direction
     int freq_growth = 1; // determines how frequently domain grows (actually not relevant because it will go every timestep)
     int insertion_freq = 1;
-    double speed_l = 0.05; // speed of a leader cell
-    double speed_f = 0.08; // speed of a follower cell
+    double speed_l = 0.05;//0.05; // speed of a leader cell
+    double speed_f = 0.08;//0.08; // speed of a follower cell
 
 
     // distance to the track parameters
@@ -74,18 +74,18 @@ int main() {
     // parameters for the dynamics of chemoattractant concentration
 
 
-    double D = 1/1; // to 10^5 \nu m^2/h diffusion coefficient
+    double D = 1; // to 10^5 \nu m^2/h diffusion coefficient
     double t = 0; // initialise time, redundant
     double dt = 0.01/10; // time step
-    int dx = 1; // space step in x direction
-    int dy = 1; // space step in y direction
+    double dx = 1; // space step in x direction, double to be consistent with other types
+    double dy = 1; // space step in y direction
     double kai = 1/100;//0.0001/10; // to 1 /h production rate of chemoattractant
 
 
     // parameters for internalisation
 
     double R = cell_radius;//7.5/10; // \nu m cell radius
-    int lam = 100/100;//(100)/10; // to 1000 /h chemoattractant internalisation
+    double lam = 1;//(100)/10; // to 1000 /h chemoattractant internalisation
 
 
     // matrix that stores the values of concentration of chemoattractant
@@ -475,15 +475,17 @@ int main() {
 
         // SEARCH MULTIPLE TIMES
 
+        /*
+         * create a random list of cell ids
+         */
 
-        int no_replacements = particles.size(); // to store the number of cells that have already been picked randomly
 
         int check_rep = 0; // check for repetitions, 0 no rep, 1 rep
 
         //for (int j=0; j<N_steps;j++){
 
         std::default_random_engine gen2;
-        std::uniform_real_distribution<double> uniform_particles(0, no_replacements); // can only move forward
+        std::uniform_real_distribution<double> uniform_particles(0, particles.size()); // can only move forward
 
         VectorXi particle_id = VectorXi::Zero(particles.size());
 
