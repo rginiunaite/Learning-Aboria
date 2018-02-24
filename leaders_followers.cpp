@@ -172,6 +172,29 @@ int main() {
     followers.init_neighbour_search(vdouble2(0,0), 5*vdouble2(length_x,length_y), vbool2(false,false));
 
     //initialise leaders
+    //
+
+    /*
+    * compact initialisation
+    */
+
+    for (int i=0; i<N; ++i) {
+
+        particle_type::value_type p;
+        get<radius>(p) = cell_radius;
+
+        get<position>(p) = vdouble2(cell_radius,(i+1)*diameter); // x=2, uniformly in y
+        /*
+         * loop over all neighbouring particles within "diameter=2*radius" distance
+         */
+
+
+        particles.push_back(p);
+    }
+
+    /*
+     * random initialisation
+     */
 
     for (int i=0; i<N; ++i) {
         bool free_position = false;

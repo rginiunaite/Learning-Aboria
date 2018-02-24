@@ -346,6 +346,7 @@ VectorXi func(double diff_conc, double slope, int n_seed) {
         //for (int j=0; j<N_steps;j++){
 
         std::default_random_engine gen2;
+        gen2.seed(t);
         std::uniform_real_distribution<double> uniform_particles(0, no_replacements); // can only move forward
 
         VectorXi particle_id = VectorXi::Zero(particles.size());

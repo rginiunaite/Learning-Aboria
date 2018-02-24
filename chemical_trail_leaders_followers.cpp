@@ -37,6 +37,7 @@ int main() {
     int insertion_freq = 1;
     double speed_l = 0.05;//0.05; // speed of a leader cell
     double speed_f = 0.08;//0.08; // speed of a follower cell
+    double dettach_prob = 1; // probability that a follower cell which is on trail looses the trail
 
 
     // distance to the track parameters
@@ -76,7 +77,7 @@ int main() {
 
     double D = 1; // to 10^5 \nu m^2/h diffusion coefficient
     double t = 0; // initialise time, redundant
-    double dt = 0.01/10; // time step
+    double dt = 0.001; // time step
     double dx = 1; // space step in x direction, double to be consistent with other types
     double dy = 1; // space step in y direction
     double kai = 1/100;//0.0001/10; // to 1 /h production rate of chemoattractant
@@ -218,6 +219,7 @@ int main() {
 
         particles.push_back(p);
     }
+    particles.update_positions();
 
 
     /*
@@ -324,6 +326,7 @@ int main() {
                 followers.push_back(f);}
 
         }
+        followers.update_positions();
 
 
         /////////////////////////////////////
@@ -485,6 +488,7 @@ int main() {
         //for (int j=0; j<N_steps;j++){
 
         std::default_random_engine gen2;
+        gen2.seed(t); // different seeds
         std::uniform_real_distribution<double> uniform_particles(0, particles.size()); // can only move forward
 
         VectorXi particle_id = VectorXi::Zero(particles.size());
@@ -864,11 +868,46 @@ int main() {
 
         // update the positions of all followers
 
+        /*
+        * create a random list of followers ids
+        */
+
+
+        int check_rep_fol = 0; // check for repetitions, 0 no rep, 1 rep
+
+        //for (int j=0; j<N_steps;j++){
+
+        std::default_random_engine gen3;
+        gen3.seed(t); // different seeds
+        std::uniform_real_distribution<double> uniform_followers(0, followers.size()); // can only move forward
+
+        VectorXi follower_id = VectorXi::Zero(followers.size());
+
         for (int i = 0; i < followers.size(); i++) {
 
-            cout << "next time attached to " << get<attached_leader_nr>(followers[i]) << endl;
+            check_rep = 1; // set to 1 to enter the while loop
+            while (check_rep == 1) {
+                check_rep = 0; // it is initially zero and then will be changed to 1 if it is equivalent to others
+                follower_id(i) = uniform_followers(gen3);
+                //follower_id(i)=i; // ordered list
+
+
+                for (int j = 0; j < i; j++) {
+                    if (follower_id(i) == follower_id(j)) { check_rep_fol = 1; }
+                }
+                //cout << "particle id before " << follower_id(i) << endl;
+            }
+            //cout << "ids " << particle_id(i) << endl;
+        }
+
+
+        cout << "followers size " << followers.size() << endl;
+        for (int i = 0; i < followers.size(); i++ ) {
+                cout << " consider this id " << follower_id(i) << endl;
+
+            cout << "next time attached to " << get<attached_leader_nr>(followers[follower_id(i)]) << endl;
             vdouble2 x;
-            x = get<position>(followers[i]);
+            x = get<position>(followers[follower_id(i)]);
 
             // check what the closest neighbour is
 
@@ -879,7 +918,7 @@ int main() {
             try to find a track of a leader cell to which it is close to
              but make sure I do not
              */
-            if (get<chain>(followers[i]) == 0) {
+            if (get<chain>(followers[follower_id(i)]) == 0) {
                 for (int j = 0; j < t - 1; j++) {
                     for (int k = 0; k < N; k++) {
                         diff = x - track_position[j][k];
@@ -906,9 +945,9 @@ int main() {
                                                 break;
                                             }*/
 
-                                                get<attached_at_time_step>(followers[i]) = j;
-                                                get<attached_leader_nr>(followers[i]) = k;
-                                                get<chain>(followers[i]) = 1;
+                                                get<attached_at_time_step>(followers[follower_id(i)]) = j;
+                                                get<attached_leader_nr>(followers[follower_id(i)]) = k;
+                                                get<chain>(followers[follower_id(i)]) = 1;
                                         //}
                                     }
                                 }
@@ -926,7 +965,7 @@ int main() {
 
             // check if the position they want to move to is free
 
-            vdouble2 x_can = track_position[get<attached_at_time_step>(followers[i])][get<attached_leader_nr>(followers[i])]; //position where the cell wants to move
+            vdouble2 x_can = track_position[get<attached_at_time_step>(followers[follower_id(i)])][get<attached_leader_nr>(followers[follower_id(i)])]; //position where the cell wants to move
 
             // check if that position is free
             //cout << "Position "<< x << endl;
@@ -955,7 +994,7 @@ int main() {
                 //cout << "Found a particle with dx = " << dx << " and id = " << get<id>(b) << "\n";
 
                 //for (int i=0; i < particles.size(); i++) {
-                if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
+                if (get<id>(b) != get<id>(followers[follower_id(i)])) { // check if it is not the same particle
                 //cout << "reject step " << 1 << endl;
                 free_position = false;
                 }
@@ -967,26 +1006,26 @@ int main() {
             gen_prob.seed(t*i); // different seeds
             std::uniform_real_distribution<double> uniform_prob(0,1);
 
-            if (get<chain>(followers[i]) == 1){
+            if (get<chain>(followers[follower_id(i)]) == 1){
                 double rand_n = uniform_prob(gen_prob);
                 cout << "rand n " << rand_n << endl;
-                if (rand_n>0.5){
-                    get<chain>(followers[i]) = 0;
+                if (rand_n>dettach_prob){
+                    get<chain>(followers[follower_id(i)]) = 0;
                 }
 
             }
 
             // if the cell is part of the chain update its position
-            if (get<chain>(followers[i]) == 1 && free_position == true && round((x_can[0] * (length_x / domain_length)  )) > 0 &&
+            if (get<chain>(followers[follower_id(i)]) == 1 && free_position == true && round((x_can[0] * (length_x / domain_length)  )) > 0 &&
                                                                           round((x_can[0] * (length_x / domain_length) )) < length_x - 1 && round(x_can[1] ) > 0 &&
                                                                           round(x_can[1] ) < length_y - 1){
                 //cout << "does it come in here " << endl;
-                get<position>(followers[i]) = track_position[get<attached_at_time_step>(followers[i])][get<attached_leader_nr>(followers[i])];
-                get<attached_at_time_step>(followers[i]) += 1;
+                get<position>(followers[follower_id(i)]) = track_position[get<attached_at_time_step>(followers[follower_id(i)])][get<attached_leader_nr>(followers[follower_id(i)])];
+                get<attached_at_time_step>(followers[follower_id(i)]) += 1;
             }
 
             // if it is not part of a chain, move a random direction
-            if (get<chain>(followers[i]) == 0){
+            if (get<chain>(followers[follower_id(i)]) == 0){
 
                 double random_angle = uniformpi(gen1);
                 int sign_x, sign_y;
@@ -1035,7 +1074,7 @@ int main() {
 
 
                     //for (int i=0; i < particles.size(); i++) {
-                    if (get<id>(b) != get<id>(followers[i])) { // check if it is not the same particle
+                    if (get<id>(b) != get<id>(followers[follower_id(i)])) { // check if it is not the same particle
                         //cout << "reject step " << 1 << endl;
 
                         free_position = false;
@@ -1059,8 +1098,8 @@ int main() {
                     round(x[1]) < length_y - 1) {
                     //cout << " moves " << endl;
                     //cout << "how frequently come in here " << endl;
-                    get<position>(followers)[i] += speed_f * vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
-                    get<direction>(followers)[i] = speed_f * vdouble2(sin(random_angle), cos(random_angle));
+                    get<position>(followers)[follower_id(i)] += speed_f * vdouble2(sin(random_angle), cos(random_angle)); // update if nothing is in the next position
+                    get<direction>(followers)[follower_id(i)] = speed_f * vdouble2(sin(random_angle), cos(random_angle));
                 }
             }
 
