@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named chemical_trail_leaders_followers
+# Target rules for targets named leaders-followers
 
 # Build rule for target.
-chemical_trail_leaders_followers: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 chemical_trail_leaders_followers
-.PHONY : chemical_trail_leaders_followers
+leaders-followers: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 leaders-followers
+.PHONY : leaders-followers
 
 # fast build rule for target.
-chemical_trail_leaders_followers/fast:
-	$(MAKE) -f CMakeFiles/chemical_trail_leaders_followers.dir/build.make CMakeFiles/chemical_trail_leaders_followers.dir/build
-.PHONY : chemical_trail_leaders_followers/fast
+leaders-followers/fast:
+	$(MAKE) -f CMakeFiles/leaders-followers.dir/build.make CMakeFiles/leaders-followers.dir/build
+.PHONY : leaders-followers/fast
 
-chemical_trail_leaders_followers.o: chemical_trail_leaders_followers.cpp.o
+leaders-followers.o: leaders-followers.cpp.o
 
-.PHONY : chemical_trail_leaders_followers.o
+.PHONY : leaders-followers.o
 
 # target to build an object file
-chemical_trail_leaders_followers.cpp.o:
-	$(MAKE) -f CMakeFiles/chemical_trail_leaders_followers.dir/build.make CMakeFiles/chemical_trail_leaders_followers.dir/chemical_trail_leaders_followers.cpp.o
-.PHONY : chemical_trail_leaders_followers.cpp.o
+leaders-followers.cpp.o:
+	$(MAKE) -f CMakeFiles/leaders-followers.dir/build.make CMakeFiles/leaders-followers.dir/leaders-followers.cpp.o
+.PHONY : leaders-followers.cpp.o
 
-chemical_trail_leaders_followers.i: chemical_trail_leaders_followers.cpp.i
+leaders-followers.i: leaders-followers.cpp.i
 
-.PHONY : chemical_trail_leaders_followers.i
+.PHONY : leaders-followers.i
 
 # target to preprocess a source file
-chemical_trail_leaders_followers.cpp.i:
-	$(MAKE) -f CMakeFiles/chemical_trail_leaders_followers.dir/build.make CMakeFiles/chemical_trail_leaders_followers.dir/chemical_trail_leaders_followers.cpp.i
-.PHONY : chemical_trail_leaders_followers.cpp.i
+leaders-followers.cpp.i:
+	$(MAKE) -f CMakeFiles/leaders-followers.dir/build.make CMakeFiles/leaders-followers.dir/leaders-followers.cpp.i
+.PHONY : leaders-followers.cpp.i
 
-chemical_trail_leaders_followers.s: chemical_trail_leaders_followers.cpp.s
+leaders-followers.s: leaders-followers.cpp.s
 
-.PHONY : chemical_trail_leaders_followers.s
+.PHONY : leaders-followers.s
 
 # target to generate assembly for a file
-chemical_trail_leaders_followers.cpp.s:
-	$(MAKE) -f CMakeFiles/chemical_trail_leaders_followers.dir/build.make CMakeFiles/chemical_trail_leaders_followers.dir/chemical_trail_leaders_followers.cpp.s
-.PHONY : chemical_trail_leaders_followers.cpp.s
+leaders-followers.cpp.s:
+	$(MAKE) -f CMakeFiles/leaders-followers.dir/build.make CMakeFiles/leaders-followers.dir/leaders-followers.cpp.s
+.PHONY : leaders-followers.cpp.s
 
 # Help Target
 help:
@@ -158,10 +158,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... chemical_trail_leaders_followers"
-	@echo "... chemical_trail_leaders_followers.o"
-	@echo "... chemical_trail_leaders_followers.i"
-	@echo "... chemical_trail_leaders_followers.s"
+	@echo "... leaders-followers"
+	@echo "... leaders-followers.o"
+	@echo "... leaders-followers.i"
+	@echo "... leaders-followers.s"
 .PHONY : help
 
 

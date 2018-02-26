@@ -1119,7 +1119,7 @@ int main() {
 
                 //cout << "print position " << count_position << endl;
                 // check that the position they want to move to is free and not out of bounds
-                if (free_position == true && round((x[0] * (length_x / domain_length))) > 0 &&
+                if (free_position && round((x[0] * (length_x / domain_length))) > 0 &&
                     round((x[0] * (length_x / domain_length))) < length_x - 1 && round(x[1]) > 0 &&
                     round(x[1]) < length_y - 1) {
                     get<position>(followers)[follower_id(i)] +=
