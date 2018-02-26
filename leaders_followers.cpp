@@ -971,8 +971,7 @@ int main() {
                 get<attached_to_type>(followers[follower_id(i)]) = 2; // attached to a leader
                 get<chain>(followers[follower_id(i)]) = 1;
             } else if (distance > distance_follower && distance_follower != 0) {
-                get<attac
-                        hed_to_id>(followers[follower_id(i)]) = get<id>(
+                get<attached_to_id>(followers[follower_id(i)]) = get<id>(
                         closest_neighbour_follower); // the id of a leader
                 get<attached_to_type>(followers[follower_id(i)]) = 1; // attached to a follower
                 if (get<chain>(closest_neighbour_follower) == 1) {
